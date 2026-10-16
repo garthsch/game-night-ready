@@ -30,12 +30,17 @@ The report states the last two limits itself, so a clean run never reads as
 
 Three ways in, all GM-only:
 
-- **Game Night Ready** is its own group in the left-hand scene controls, so it
-  stays visible whichever layer you are on. Click it, then click *Check this
-  world*.
-- **Ctrl+Shift+G**, rebindable under Configure Controls.
+- **Ctrl+Shift+G** is the one that works from anywhere, including with no scene
+  open. Rebindable under Configure Controls.
+- A clipboard button in the **Token**, **Walls** and **Lighting** scene
+  controls, which are the three layers you are on while preparing a scene.
 - `game.modules.get("game-night-ready").api.run()` from a macro or the console,
-  if you would rather put it on your hotbar.
+  if you would rather put it on your hotbar. It returns the results array as
+  well as opening the report.
+
+It is deliberately not its own control group. In v14, `activeTool` resolution
+filters out button tools, and a tool's `onChange` fires only on a tool change,
+so a group whose only tool is a button renders and does nothing when clicked.
 
 There are no settings. A readiness check with a preferences page has lost the
 plot.
@@ -109,7 +114,7 @@ the walls have to be built either way.
 bun test
 ```
 
-88 tests, no Foundry required: the evaluator and predicates are pure and run
+89 tests, no Foundry required: the evaluator and predicates are pure and run
 against plain objects.
 
 ## Licence

@@ -87,34 +87,41 @@ export async function run() {
 /* -------------------------------------------- */
 
 /**
- * Its own control group rather than a tool inside Token controls.
+ * Where the button lives.
  *
- * A readiness check is not a token tool, and a tool only renders while its
- * parent group is the active one -- which would hide the button exactly when it
- * is most wanted, part-way through walling and lighting. A top-level group
- * stays visible on every layer. SceneControl has no `layer` property, so a
- * group that owns no canvas layer is legitimate, and the cleaning pass keeps a
- * group that has at least one visible tool.
+ * Not its own control group, though that was the first attempt. Verified in the
+ * v14 source: `activeTool` resolution filters out button and toggle tools
+ * (`SceneControls##prepareControls`), so a group whose only tool is a button
+ * resolves no active tool, and `##postActivate` fires a tool's `onChange` only
+ * `if (toolChange && this.tool)`. A button-only group therefore renders and
+ * does nothing when clicked.
+ *
+ * So the button is injected into the groups that already own real tools, and
+ * into the three where this work actually happens: placing tokens, tracing
+ * walls, placing lights. That keeps it one click away on every layer a GM is on
+ * while preparing a scene, without an inert companion tool to make a standalone
+ * group fire.
+ *
+ * The keybinding below is the entry point that works from anywhere, including
+ * with no scene open.
  */
+const BUTTON_IN = ["tokens", "walls", "lighting"];
+
 Hooks.on("getSceneControlButtons", controls => {
-  controls[MODULE_ID] = {
-    name: MODULE_ID,
-    title: "GAME_NIGHT_READY.ControlTitle",
-    icon: "fa-solid fa-clipboard-check",
-    order: 100,
-    visible: game.user.isGM,
-    tools: {
-      run: {
-        name: "run",
-        title: "GAME_NIGHT_READY.ButtonTitle",
-        icon: "fa-solid fa-clipboard-check",
-        order: 0,
-        button: true,
-        visible: game.user.isGM,
-        onChange: () => run()
-      }
-    }
-  };
+  for ( const groupName of BUTTON_IN ) {
+    const group = controls[groupName];
+    if ( !group ) continue;
+    group.tools ??= {};
+    group.tools.gameNightReady = {
+      name: "gameNightReady",
+      title: "GAME_NIGHT_READY.ButtonTitle",
+      icon: "fa-solid fa-clipboard-check",
+      order: Object.keys(group.tools).length,
+      button: true,
+      visible: game.user.isGM,
+      onChange: () => run()
+    };
+  }
 });
 
 /* -------------------------------------------- */

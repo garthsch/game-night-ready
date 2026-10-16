@@ -125,12 +125,22 @@ describe("the module cannot gate or mutate anything", () => {
     for ( const key of new Set(referenced) ) expect(Object.keys(lang)).toContain(key);
   });
 
-  test("the button lives in its own control group, not inside Token tools", () => {
-    // A tool inside controls.tokens only renders while Token is the active
-    // group, which hides it part-way through walling and lighting.
-    expect(entry).not.toContain("controls.tokens");
-    expect(entry).toContain("controls[MODULE_ID]");
-    expect(entry).toMatch(/tools:\s*\{\s*run:/);
+  test("the button is injected into groups that own real tools, never a standalone group", () => {
+    // v14: activeTool resolution filters out button and toggle tools, and a
+    // tool's onChange fires only on a tool change. A group whose only tool is
+    // a button resolves no active tool, renders, and does nothing on click.
+    expect(entry).toContain('const BUTTON_IN = ["tokens", "walls", "lighting"]');
+    expect(entry).not.toContain("controls[MODULE_ID] =");
+    expect(entry).toContain("group.tools.gameNightReady");
+    expect(entry).toContain("button: true");
+  });
+
+  test("the button covers the layers where scene preparation happens", () => {
+    const match = entry.match(/const BUTTON_IN = \[([^\]]*)\]/);
+    expect(match).not.toBeNull();
+    for ( const layer of ["tokens", "walls", "lighting"] ) {
+      expect(match![1]).toContain(layer);
+    }
   });
 
   test("the keybinding is GM-restricted, like the button", () => {
