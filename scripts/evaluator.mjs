@@ -1,0 +1,99 @@
+/**
+ * The one generic evaluator (ISC-23).
+ *
+ * It walks the check rows, resolves each row's scope to a context object,
+ * runs the row's predicate, and returns a result per row. There is no
+ * per-check code anywhere: a new check is a new row in data/checks.json.
+ *
+ * Pure with respect to Foundry: the caller supplies the scopes, so this file
+ * runs under `bun test` against plain objects.
+ */
+
+import { evaluatePredicate, UNAVAILABLE } from "./predicate.mjs";
+
+/** The seven fields every row must carry (ISC-24). */
+export const REQUIRED_FIELDS = ["id", "week", "competency", "scope", "predicate", "message", "hint"];
+
+export const STATUS = {
+  PASS: "pass",
+  OUTSTANDING: "outstanding",
+  UNAVAILABLE: "unavailable",
+  ERROR: "error"
+};
+
+/**
+ * Validate a row set. Returns an array of problem strings; empty means valid.
+ */
+export function validateChecks(rows) {
+  const problems = [];
+  if ( !Array.isArray(rows) ) return ["checks must be an array"];
+  const seen = new Set();
+  rows.forEach((row, index) => {
+    const label = row?.id ?? `row ${index}`;
+    for ( const field of REQUIRED_FIELDS ) {
+      const value = row?.[field];
+      const missing = (value === undefined) || (value === null)
+        || ((typeof value === "string") && !value.trim());
+      if ( missing ) problems.push(`${label}: missing required field \`${field}\``);
+    }
+    if ( row?.id ) {
+      if ( seen.has(row.id) ) problems.push(`${label}: duplicate id`);
+      seen.add(row.id);
+    }
+    if ( row?.predicate && !row.predicate.op ) problems.push(`${label}: predicate has no \`op\``);
+  });
+  return problems;
+}
+
+/**
+ * Run every row.
+ *
+ * @param {object[]} rows      The check rows.
+ * @param {object} scopes      Map of scope name to context object, or null when
+ *                             that scope cannot be read right now.
+ * @param {object} [options]   Passed through to predicates (e.g. `baseline`).
+ * @returns {object[]}         One result per row, in row order.
+ */
+export function runChecks(rows, scopes, options = {}) {
+  return rows.map(row => {
+    const base = {
+      id: row.id,
+      week: row.week,
+      competency: row.competency,
+      scope: row.scope,
+      message: row.message,
+      hint: row.hint
+    };
+    if ( !(row.scope in scopes) ) {
+      return { ...base, status: STATUS.ERROR, detail: `unknown scope \`${row.scope}\`` };
+    }
+    const context = scopes[row.scope];
+    if ( (context === null) || (context === undefined) ) {
+      return { ...base, status: STATUS.UNAVAILABLE, detail: `nothing to read for scope \`${row.scope}\`` };
+    }
+    try {
+      const verdict = evaluatePredicate(row.predicate, context, options);
+      if ( verdict === UNAVAILABLE ) {
+        return { ...base, status: STATUS.UNAVAILABLE, detail: "the field this check reads is not set" };
+      }
+      return { ...base, status: verdict ? STATUS.PASS : STATUS.OUTSTANDING };
+    }
+    catch ( err ) {
+      return { ...base, status: STATUS.ERROR, detail: err.message };
+    }
+  });
+}
+
+/**
+ * Group results for reporting, preserving competency order of first appearance.
+ */
+export function summarise(results) {
+  const byCompetency = new Map();
+  for ( const result of results ) {
+    if ( !byCompetency.has(result.competency) ) byCompetency.set(result.competency, []);
+    byCompetency.get(result.competency).push(result);
+  }
+  const counts = { pass: 0, outstanding: 0, unavailable: 0, error: 0 };
+  for ( const result of results ) counts[result.status] += 1;
+  return { counts, byCompetency, total: results.length };
+}

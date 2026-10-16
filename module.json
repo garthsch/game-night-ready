@@ -1,0 +1,31 @@
+{
+  "id": "readiness-check",
+  "title": "Readiness Check",
+  "description": "<p>Press one button before a session and see what is still outstanding in the world you are about to run. Reads the Foundry document model only: grid calibration, walls, lighting, token vision, journals and the module stack. Reports completeness; it does not judge whether your choices were right.</p>",
+  "version": "0.1.0",
+  "type": "module",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14.365"
+  },
+  "authors": [
+    {
+      "name": "Garth Schwer"
+    }
+  ],
+  "esmodules": [
+    "scripts/module.mjs"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "styles": [
+    "styles/readiness-check.css"
+  ],
+  "license": "LICENSE",
+  "readme": "README.md"
+}

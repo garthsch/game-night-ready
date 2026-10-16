@@ -1,0 +1,182 @@
+[
+  {
+    "id": "canvas.background.present",
+    "week": 2,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": {
+      "op": "some",
+      "path": "levels",
+      "where": { "op": "exists", "path": "background.src" }
+    },
+    "message": "No level in this scene has a background image.",
+    "hint": "Open Scene Configuration and set a background image on at least one level. In v14 the image lives on a Level, not on the Scene itself."
+  },
+  {
+    "id": "canvas.grid.calibrated",
+    "week": 2,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": {
+      "op": "any_of",
+      "of": [
+        { "op": "neq", "path": "grid.size", "value": 100 },
+        { "op": "eq", "path": "grid.type", "value": 0 }
+      ]
+    },
+    "message": "The grid is still at the 100px default, so it has probably not been matched to the map.",
+    "hint": "Use the grid configuration tool to line the grid up with the squares on your map, or set the grid to Gridless if the map has no usable grid. Either counts: both are a decision."
+  },
+  {
+    "id": "canvas.walls.present",
+    "week": 3,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": { "op": "count_gte", "path": "walls", "value": 1, "excludeBaseline": true },
+    "message": "This scene has no walls, so tokens will walk through everything and nothing will block sight.",
+    "hint": "Use the Walls tool to trace the outside of each room and corridor. Walls are what make lighting and vision mean anything."
+  },
+  {
+    "id": "canvas.walls.doors",
+    "week": 3,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": {
+      "op": "some",
+      "path": "walls",
+      "where": { "op": "gte", "path": "door", "value": 1 },
+      "excludeBaseline": true
+    },
+    "message": "No wall on this scene is configured as a door. If your map genuinely has no doors, this is expected.",
+    "hint": "Select a wall segment across a doorway and set its Door type. A door you can open at the table is worth more than a wall you have to delete."
+  },
+  {
+    "id": "canvas.walls.sight-blocking",
+    "week": 3,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": {
+      "op": "some",
+      "path": "walls",
+      "where": { "op": "gte", "path": "sight", "value": 1 },
+      "excludeBaseline": true
+    },
+    "message": "Walls exist but none of them block sight, so players will see the whole map at once.",
+    "hint": "A wall's Sight restriction controls what players can see past it. Walls set to None are movement-only barriers."
+  },
+  {
+    "id": "canvas.lights.placed",
+    "week": 4,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": {
+      "op": "any_of",
+      "of": [
+        { "op": "count_gte", "path": "lights", "value": 1, "excludeBaseline": true },
+        {
+          "op": "some",
+          "path": "tokens",
+          "where": {
+            "op": "any_of",
+            "of": [
+              { "op": "gt", "path": "light.dim", "value": 0 },
+              { "op": "gt", "path": "light.bright", "value": 0 }
+            ]
+          }
+        }
+      ]
+    },
+    "message": "There is no light anywhere on this scene: no ambient light placed and no token carrying one.",
+    "hint": "Place an ambient light, or configure a light on the token carrying a torch. A deliberately dark dungeon still needs one light source for the darkness to read as darkness."
+  },
+  {
+    "id": "canvas.vision.scene-enabled",
+    "week": 4,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": { "op": "truthy", "path": "tokenVision" },
+    "message": "Token Vision is turned off for this scene, so all your wall and lighting work will be invisible to players.",
+    "hint": "Scene Configuration, Vision tab: enable Token Vision. Leave it off only for a map you intend everyone to see all of at once."
+  },
+  {
+    "id": "canvas.vision.token-sight",
+    "week": 4,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": {
+      "op": "some",
+      "path": "tokens",
+      "where": { "op": "truthy", "path": "sight.enabled" }
+    },
+    "message": "No token on this scene has vision enabled, so no player token will see anything.",
+    "hint": "Open a player token's configuration and enable Vision with a sight range. Without it the token is blind regardless of the scene setting."
+  },
+  {
+    "id": "canvas.lighting.not-blanket",
+    "week": 4,
+    "competency": "Canvas and spatial calibration",
+    "scope": "scene",
+    "predicate": { "op": "falsy", "path": "environment.globalLight.enabled" },
+    "message": "Global Illumination is on, which lights the whole map evenly. If this is an outdoor daylight scene that is correct; on a dungeon it hides your lighting work.",
+    "hint": "Scene Configuration, Lighting: turn Global Illumination off to let your placed lights do the work."
+  },
+  {
+    "id": "automation.tokens.actor-linked",
+    "week": 5,
+    "competency": "System automation execution",
+    "scope": "scene",
+    "predicate": {
+      "op": "some",
+      "path": "tokens",
+      "where": { "op": "exists", "path": "actorId" },
+      "excludeBaseline": true
+    },
+    "message": "No token on this scene is linked to an actor, so nothing on the canvas has a character sheet behind it.",
+    "hint": "Drag actors from the Actors directory onto the canvas rather than creating bare tokens. An unlinked token cannot roll, take damage or appear in combat properly."
+  },
+  {
+    "id": "prep.notes.placed",
+    "week": 5,
+    "competency": "Visual tools and preparation",
+    "scope": "scene",
+    "predicate": {
+      "op": "some",
+      "path": "notes",
+      "where": { "op": "exists", "path": "entryId" },
+      "excludeBaseline": true
+    },
+    "message": "This scene carries no map notes linked to journal entries, so your prep is not reachable from the map at the table.",
+    "hint": "Use the Notes tool to pin a journal entry to each keyed location. At the table you click the pin instead of hunting through the journal."
+  },
+  {
+    "id": "prep.journal.present",
+    "week": 5,
+    "competency": "Visual tools and preparation",
+    "scope": "world",
+    "predicate": { "op": "count_gte", "path": "journal", "value": 1, "excludeBaseline": true },
+    "message": "This world has no journal entries of your own.",
+    "hint": "Even one entry per room is enough to run from. Journals are the thing you read at the table, so they are prep rather than decoration."
+  },
+  {
+    "id": "vanilla.modules.restrained",
+    "week": 1,
+    "competency": "Vanilla-first discipline",
+    "scope": "world",
+    "predicate": { "op": "lte", "path": "activeModuleCount", "value": 5 },
+    "message": "More than five modules are active. Every one of them is a thing that can break in a way you cannot diagnose yet.",
+    "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick."
+  },
+  {
+    "id": "admin.gm.has-character",
+    "week": 1,
+    "competency": "Server administration",
+    "scope": "world",
+    "predicate": {
+      "op": "some",
+      "path": "players",
+      "where": { "op": "exists", "path": "characterId" }
+    },
+    "message": "No player user has a character assigned, so nobody will control a token when they log in.",
+    "hint": "User Management: assign each player's user to their actor. Without it a player connects and can move nothing."
+  }
+]
