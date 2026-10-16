@@ -10,7 +10,7 @@
  * document-model collection or document field.
  */
 
-export const MODULE_ID = "readiness-check";
+export const MODULE_ID = "game-night-ready";
 
 /** The scene a check should be read against: whichever one the GM is looking at. */
 export function currentScene() {

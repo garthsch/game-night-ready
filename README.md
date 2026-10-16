@@ -1,4 +1,4 @@
-# Readiness Check
+# Game Night Ready
 
 Press one button before a session and see what is still outstanding in the world
 you are about to run.
@@ -80,7 +80,7 @@ the walls have to be built either way.
 bun test
 ```
 
-76 tests, no Foundry required: the evaluator and predicates are pure and run
+82 tests, no Foundry required: the evaluator and predicates are pure and run
 against plain objects.
 
 ## Licence

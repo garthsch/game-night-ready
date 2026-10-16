@@ -188,3 +188,47 @@ describe("ISC-29 — the report says what it does not assess", () => {
     expect(injected).toContain("&lt;img");
   });
 });
+
+describe("the verdict headline is the name, and it is a claim", () => {
+  const { verdict } = require("../scripts/report.mjs");
+
+  test("all passing, all readable: the module says the name", () => {
+    expect(verdict({ pass: 14, outstanding: 0, unavailable: 0, error: 0 }))
+      .toEqual({ state: "ready", label: "Game Night Ready." });
+  });
+
+  test("anything outstanding: not ready, with the count", () => {
+    const { state, label } = verdict({ pass: 4, outstanding: 10, unavailable: 0, error: 0 });
+    expect(state).toBe("not-ready");
+    expect(label).toContain("10 outstanding");
+  });
+
+  test("nothing outstanding but something unreadable: never claims ready", () => {
+    const { state, label } = verdict({ pass: 13, outstanding: 0, unavailable: 1, error: 0 });
+    expect(state).toBe("unknown");
+    expect(label).not.toContain("Game Night Ready");
+    expect(label).toContain("1 check could not be read");
+  });
+
+  test("a broken check also blocks the ready claim, and counts with the unreadable", () => {
+    const { state, label } = verdict({ pass: 12, outstanding: 0, unavailable: 1, error: 1 });
+    expect(state).toBe("unknown");
+    expect(label).toContain("2 checks could not be read");
+  });
+
+  test("the rendered report carries the verdict above the counts", () => {
+    const ready = buildReportHtml(
+      [{ id: "a", week: 1, competency: "X", scope: "scene", status: "pass", message: "m", hint: "h" }],
+      { sceneName: "Keep" }
+    );
+    expect(ready).toContain("gnr-verdict-ready");
+    expect(ready.indexOf("gnr-verdict")).toBeLessThan(ready.indexOf("gnr-headline"));
+  });
+
+  test("a no-scene run reports can't-tell, not ready", () => {
+    const results = runChecks(checks, { scene: null, world: null, user: null });
+    const html = buildReportHtml(results, {});
+    expect(html).toContain("gnr-verdict-unknown");
+    expect(html).not.toContain("gnr-verdict-ready");
+  });
+});

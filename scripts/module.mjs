@@ -1,5 +1,5 @@
 /**
- * Readiness Check — entry point.
+ * Game Night Ready — entry point.
  *
  * One button. It reads the document model, runs the data rows, and reports what
  * is still outstanding in the scene you are looking at.
@@ -33,7 +33,7 @@ Hooks.once("ready", async () => {
   const problems = validateChecks(CHECKS);
   if ( problems.length ) {
     console.error(`${MODULE_ID} | invalid check rows:\n${problems.join("\n")}`);
-    ui.notifications?.error(`Readiness Check: ${problems.length} invalid check row(s). See the console.`);
+    ui.notifications?.error(`Game Night Ready: ${problems.length} invalid check row(s). See the console.`);
   }
   // Callable from a macro or the console, for anyone who prefers not to hunt for a button.
   game.modules.get(MODULE_ID).api = { run, checks: () => CHECKS };
@@ -50,7 +50,7 @@ async function loadChecks() {
   }
   catch ( err ) {
     console.error(`${MODULE_ID} | could not load check rows:`, err);
-    ui.notifications?.error("Readiness Check could not load its check rows.");
+    ui.notifications?.error("Game Night Ready could not load its check rows.");
     return [];
   }
 }
@@ -58,7 +58,7 @@ async function loadChecks() {
 /** Run every check against the current world and scene, and show the report. */
 export async function run() {
   if ( !CHECKS.length ) {
-    ui.notifications?.warn("Readiness Check has no check rows loaded.");
+    ui.notifications?.warn("Game Night Ready has no check rows loaded.");
     return null;
   }
   const scopes = collectScopes();
@@ -80,9 +80,9 @@ Hooks.on("getSceneControlButtons", controls => {
   const tokens = controls.tokens;
   if ( !tokens ) return;
   tokens.tools ??= {};
-  tokens.tools.readinessCheck = {
-    name: "readinessCheck",
-    title: "READINESS_CHECK.ButtonTitle",
+  tokens.tools.gameNightReady = {
+    name: "gameNightReady",
+    title: "GAME_NIGHT_READY.ButtonTitle",
     icon: "fa-solid fa-clipboard-check",
     order: Object.keys(tokens.tools).length,
     button: true,
