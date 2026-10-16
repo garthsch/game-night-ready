@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { runChecks, STATUS } from "../scripts/evaluator.mjs";
-import checks from "../data/checks.json";
+import { runChecks, STATUS } from "../../scripts/evaluator.mjs";
+import checks from "../../data/checks.json";
 
 /**
  * Field values taken from a real v14.365 world's LevelDB, not invented: the

@@ -1,7 +1,9 @@
 # Game Night Ready
 
-Press one button before a session and see what is still outstanding in the world
-you are about to run.
+**A module for [Foundry Virtual Tabletop](https://foundryvtt.com) v14.**
+
+Press one button before a session and see what is still outstanding in the
+Foundry world you are about to run.
 
 Paying for content does not buy readiness. Commercial Foundry material ranges
 from full builds with walls, lighting and configured sheets down to flat PDFs
@@ -110,12 +112,17 @@ the walls have to be built either way.
 
 ## Development
 
+Everything at the repository root is what ships: `module.json`, `scripts/`,
+`data/`, `lang/`, `styles/`, `LICENSE`, `README.md`. The release zip is those
+files and nothing else. Development material lives under `dev/` and is not part
+of the module.
+
 ```bash
 bun test
 ```
 
-94 tests, no Foundry required: the evaluator and predicates are pure and run
-against plain objects.
+94 tests in `dev/test/`, no Foundry required: the evaluator and predicates are
+pure and run against plain objects.
 
 ## Licence
 

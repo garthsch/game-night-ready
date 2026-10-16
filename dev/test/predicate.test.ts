@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { evaluatePredicate, resolvePath, toMembers, UNAVAILABLE } from "../scripts/predicate.mjs";
+import { evaluatePredicate, resolvePath, toMembers, UNAVAILABLE } from "../../scripts/predicate.mjs";
 
 /** Stand-in for a Foundry EmbeddedCollection: Map-like with `.contents`. */
 function collection(members: any[]) {

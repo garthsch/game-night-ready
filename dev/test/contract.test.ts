@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { runChecks, STATUS } from "../scripts/evaluator.mjs";
-import { buildReportHtml, HUMAN_ASSESSED } from "../scripts/report.mjs";
-import checks from "../data/checks.json";
+import { runChecks, STATUS } from "../../scripts/evaluator.mjs";
+import { buildReportHtml, HUMAN_ASSESSED } from "../../scripts/report.mjs";
+import checks from "../../data/checks.json";
 
-const ROOT = join(import.meta.dir, "..");
+const ROOT = join(import.meta.dir, "..", "..");
 const SOURCES = readdirSync(join(ROOT, "scripts"))
   .filter(f => f.endsWith(".mjs"))
   .map(f => ({ file: f, text: readFileSync(join(ROOT, "scripts", f), "utf8") }));
@@ -247,7 +247,7 @@ describe("the report says what it does not assess", () => {
 });
 
 describe("the verdict headline is the name, and it is a claim", () => {
-  const { verdict } = require("../scripts/report.mjs");
+  const { verdict } = require("../../scripts/report.mjs");
 
   test("all passing, all readable: the module says the name", () => {
     expect(verdict({ pass: 14, outstanding: 0, unavailable: 0, error: 0 }))

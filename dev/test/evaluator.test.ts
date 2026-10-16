@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { REQUIRED_FIELDS, runChecks, STATUS, summarise, validateChecks } from "../scripts/evaluator.mjs";
-import checks from "../data/checks.json";
+import { REQUIRED_FIELDS, runChecks, STATUS, summarise, validateChecks } from "../../scripts/evaluator.mjs";
+import checks from "../../data/checks.json";
 
 function collection(members: any[]) {
   const map = new Map(members.map((m, i) => [m.id ?? String(i), m]));
