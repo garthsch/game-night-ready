@@ -220,3 +220,25 @@ describe("prerequisites between rows", () => {
     for ( const row of checks ) if ( row.needs ) expect(ids.has(row.needs)).toBe(true);
   });
 });
+
+describe("the rows follow the curriculum", () => {
+  // CURRICULUM.md v4: 1 hosting and accounts, 2 canvas, 3 actors and automation,
+  // 4 journals, campaign structure and module management. Weeks 5 and 6 are
+  // practicums, so no check row belongs to them.
+  test("every row sits in a week the course actually teaches content in", () => {
+    for ( const row of checks ) expect([1, 2, 3, 4]).toContain(row.week);
+  });
+
+  test("rows are written in the order the path walks them", () => {
+    const weeks = checks.map(r => r.week);
+    expect(weeks).toEqual([...weeks].sort((a, b) => a - b));
+  });
+
+  test("a prerequisite never sits in a later week than the row that needs it", () => {
+    const by = new Map(checks.map(r => [r.id, r]));
+    for ( const row of checks ) {
+      if ( !row.needs ) continue;
+      expect(by.get(row.needs).week).toBeLessThanOrEqual(row.week);
+    }
+  });
+});

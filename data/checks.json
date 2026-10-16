@@ -99,7 +99,7 @@
   },
   {
     "id": "canvas.walls.present",
-    "week": 3,
+    "week": 2,
     "competency": "Canvas and spatial calibration",
     "topic": "Walls",
     "scope": "scene",
@@ -116,7 +116,7 @@
   },
   {
     "id": "canvas.walls.doors",
-    "week": 3,
+    "week": 2,
     "competency": "Canvas and spatial calibration",
     "topic": "Doors",
     "scope": "scene",
@@ -137,7 +137,7 @@
   },
   {
     "id": "canvas.walls.sight-blocking",
-    "week": 3,
+    "week": 2,
     "competency": "Canvas and spatial calibration",
     "topic": "Walls that block sight",
     "scope": "scene",
@@ -158,7 +158,7 @@
   },
   {
     "id": "canvas.lights.placed",
-    "week": 4,
+    "week": 2,
     "competency": "Canvas and spatial calibration",
     "topic": "Light on the scene",
     "scope": "scene",
@@ -198,8 +198,23 @@
     "needs": "canvas.scene.own"
   },
   {
+    "id": "canvas.lighting.not-blanket",
+    "week": 2,
+    "competency": "Canvas and spatial calibration",
+    "topic": "Global illumination",
+    "scope": "scene",
+    "predicate": {
+      "op": "falsy",
+      "path": "environment.globalLight.enabled"
+    },
+    "message": "Global Illumination is on, which lights the whole map evenly. If this is an outdoor daylight scene that is correct; on a dungeon it hides your lighting work.",
+    "done": "Global Illumination is off, so the lights you place do the work.",
+    "hint": "Scene Configuration, Lighting: turn Global Illumination off to let your placed lights do the work.",
+    "needs": "canvas.scene.own"
+  },
+  {
     "id": "canvas.vision.scene-enabled",
-    "week": 4,
+    "week": 2,
     "competency": "Canvas and spatial calibration",
     "topic": "Token Vision on the scene",
     "scope": "scene",
@@ -214,7 +229,7 @@
   },
   {
     "id": "canvas.vision.token-sight",
-    "week": 4,
+    "week": 2,
     "competency": "Canvas and spatial calibration",
     "topic": "Vision on a token",
     "scope": "scene",
@@ -232,38 +247,8 @@
     "needs": "canvas.scene.own"
   },
   {
-    "id": "canvas.lighting.not-blanket",
-    "week": 4,
-    "competency": "Canvas and spatial calibration",
-    "topic": "Global illumination",
-    "scope": "scene",
-    "predicate": {
-      "op": "falsy",
-      "path": "environment.globalLight.enabled"
-    },
-    "message": "Global Illumination is on, which lights the whole map evenly. If this is an outdoor daylight scene that is correct; on a dungeon it hides your lighting work.",
-    "done": "Global Illumination is off, so the lights you place do the work.",
-    "hint": "Scene Configuration, Lighting: turn Global Illumination off to let your placed lights do the work.",
-    "needs": "canvas.scene.own"
-  },
-  {
-    "id": "vanilla.modules.restrained",
-    "week": 4,
-    "competency": "Vanilla-first discipline",
-    "topic": "A module stack you can diagnose",
-    "scope": "world",
-    "predicate": {
-      "op": "lte",
-      "path": "activeModuleCount",
-      "value": 5
-    },
-    "message": "More than five modules are active. Every one of them is a thing that can break in a way you cannot diagnose yet.",
-    "done": "Five or fewer modules are active, which is a stack you can still diagnose.",
-    "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick."
-  },
-  {
     "id": "automation.tokens.actor-linked",
-    "week": 5,
+    "week": 3,
     "competency": "System automation execution",
     "topic": "Tokens linked to actors",
     "scope": "scene",
@@ -282,8 +267,24 @@
     "needs": "canvas.scene.own"
   },
   {
+    "id": "prep.journal.present",
+    "week": 4,
+    "competency": "Visual tools and preparation",
+    "topic": "Journal entries of your own",
+    "scope": "world",
+    "predicate": {
+      "op": "count_gte",
+      "path": "journal",
+      "value": 1,
+      "excludeBaseline": true
+    },
+    "message": "This world has no journal entries of your own.",
+    "done": "This world has journal entries of your own.",
+    "hint": "Even one entry per room is enough to run from. Journals are the thing you read at the table, so they are prep rather than decoration."
+  },
+  {
     "id": "prep.notes.placed",
-    "week": 5,
+    "week": 4,
     "competency": "Visual tools and preparation",
     "topic": "Map notes linked to journals",
     "scope": "scene",
@@ -302,19 +303,18 @@
     "needs": "canvas.scene.own"
   },
   {
-    "id": "prep.journal.present",
-    "week": 5,
-    "competency": "Visual tools and preparation",
-    "topic": "Journal entries of your own",
+    "id": "vanilla.modules.restrained",
+    "week": 4,
+    "competency": "Vanilla-first discipline",
+    "topic": "A module stack you can diagnose",
     "scope": "world",
     "predicate": {
-      "op": "count_gte",
-      "path": "journal",
-      "value": 1,
-      "excludeBaseline": true
+      "op": "lte",
+      "path": "activeModuleCount",
+      "value": 5
     },
-    "message": "This world has no journal entries of your own.",
-    "done": "This world has journal entries of your own.",
-    "hint": "Even one entry per room is enough to run from. Journals are the thing you read at the table, so they are prep rather than decoration."
+    "message": "More than five modules are active. Every one of them is a thing that can break in a way you cannot diagnose yet.",
+    "done": "Five or fewer modules are active, which is a stack you can still diagnose.",
+    "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick."
   }
 ]
