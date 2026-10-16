@@ -7,7 +7,10 @@
     "predicate": {
       "op": "some",
       "path": "levels",
-      "where": { "op": "exists", "path": "background.src" }
+      "where": {
+        "op": "exists",
+        "path": "background.src"
+      }
     },
     "message": "No level in this scene has a background image.",
     "hint": "Open Scene Configuration and set a background image on at least one level. In v14 the image lives on a Level, not on the Scene itself."
@@ -20,8 +23,16 @@
     "predicate": {
       "op": "any_of",
       "of": [
-        { "op": "neq", "path": "grid.size", "value": 100 },
-        { "op": "eq", "path": "grid.type", "value": 0 }
+        {
+          "op": "neq",
+          "path": "grid.size",
+          "value": 100
+        },
+        {
+          "op": "eq",
+          "path": "grid.type",
+          "value": 0
+        }
       ]
     },
     "message": "The grid is still at the 100px default, so it has probably not been matched to the map.",
@@ -32,7 +43,12 @@
     "week": 3,
     "competency": "Canvas and spatial calibration",
     "scope": "scene",
-    "predicate": { "op": "count_gte", "path": "walls", "value": 1, "excludeBaseline": true },
+    "predicate": {
+      "op": "count_gte",
+      "path": "walls",
+      "value": 1,
+      "excludeBaseline": true
+    },
     "message": "This scene has no walls, so tokens will walk through everything and nothing will block sight.",
     "hint": "Use the Walls tool to trace the outside of each room and corridor. Walls are what make lighting and vision mean anything."
   },
@@ -44,7 +60,11 @@
     "predicate": {
       "op": "some",
       "path": "walls",
-      "where": { "op": "gte", "path": "door", "value": 1 },
+      "where": {
+        "op": "gte",
+        "path": "door",
+        "value": 1
+      },
       "excludeBaseline": true
     },
     "message": "No wall on this scene is configured as a door. If your map genuinely has no doors, this is expected.",
@@ -58,11 +78,15 @@
     "predicate": {
       "op": "some",
       "path": "walls",
-      "where": { "op": "gte", "path": "sight", "value": 1 },
+      "where": {
+        "op": "gte",
+        "path": "sight",
+        "value": 1
+      },
       "excludeBaseline": true
     },
-    "message": "Walls exist but none of them block sight, so players will see the whole map at once.",
-    "hint": "A wall's Sight restriction controls what players can see past it. Walls set to None are movement-only barriers."
+    "message": "No wall on this scene is set to block sight, so nothing will hide the map from your players.",
+    "hint": "A wall's Sight restriction controls what players can see past it. Walls set to None are movement-only barriers, which is right for a railing and wrong for a wall."
   },
   {
     "id": "canvas.lights.placed",
@@ -72,15 +96,28 @@
     "predicate": {
       "op": "any_of",
       "of": [
-        { "op": "count_gte", "path": "lights", "value": 1, "excludeBaseline": true },
+        {
+          "op": "count_gte",
+          "path": "lights",
+          "value": 1,
+          "excludeBaseline": true
+        },
         {
           "op": "some",
           "path": "tokens",
           "where": {
             "op": "any_of",
             "of": [
-              { "op": "gt", "path": "light.dim", "value": 0 },
-              { "op": "gt", "path": "light.bright", "value": 0 }
+              {
+                "op": "gt",
+                "path": "light.dim",
+                "value": 0
+              },
+              {
+                "op": "gt",
+                "path": "light.bright",
+                "value": 0
+              }
             ]
           }
         }
@@ -94,7 +131,10 @@
     "week": 4,
     "competency": "Canvas and spatial calibration",
     "scope": "scene",
-    "predicate": { "op": "truthy", "path": "tokenVision" },
+    "predicate": {
+      "op": "truthy",
+      "path": "tokenVision"
+    },
     "message": "Token Vision is turned off for this scene, so all your wall and lighting work will be invisible to players.",
     "hint": "Scene Configuration, Vision tab: enable Token Vision. Leave it off only for a map you intend everyone to see all of at once."
   },
@@ -106,7 +146,10 @@
     "predicate": {
       "op": "some",
       "path": "tokens",
-      "where": { "op": "truthy", "path": "sight.enabled" }
+      "where": {
+        "op": "truthy",
+        "path": "sight.enabled"
+      }
     },
     "message": "No token on this scene has vision enabled, so no player token will see anything.",
     "hint": "Open a player token's configuration and enable Vision with a sight range. Without it the token is blind regardless of the scene setting."
@@ -116,7 +159,10 @@
     "week": 4,
     "competency": "Canvas and spatial calibration",
     "scope": "scene",
-    "predicate": { "op": "falsy", "path": "environment.globalLight.enabled" },
+    "predicate": {
+      "op": "falsy",
+      "path": "environment.globalLight.enabled"
+    },
     "message": "Global Illumination is on, which lights the whole map evenly. If this is an outdoor daylight scene that is correct; on a dungeon it hides your lighting work.",
     "hint": "Scene Configuration, Lighting: turn Global Illumination off to let your placed lights do the work."
   },
@@ -128,7 +174,10 @@
     "predicate": {
       "op": "some",
       "path": "tokens",
-      "where": { "op": "exists", "path": "actorId" },
+      "where": {
+        "op": "exists",
+        "path": "actorId"
+      },
       "excludeBaseline": true
     },
     "message": "No token on this scene is linked to an actor, so nothing on the canvas has a character sheet behind it.",
@@ -142,7 +191,10 @@
     "predicate": {
       "op": "some",
       "path": "notes",
-      "where": { "op": "exists", "path": "entryId" },
+      "where": {
+        "op": "exists",
+        "path": "entryId"
+      },
       "excludeBaseline": true
     },
     "message": "This scene carries no map notes linked to journal entries, so your prep is not reachable from the map at the table.",
@@ -153,7 +205,12 @@
     "week": 5,
     "competency": "Visual tools and preparation",
     "scope": "world",
-    "predicate": { "op": "count_gte", "path": "journal", "value": 1, "excludeBaseline": true },
+    "predicate": {
+      "op": "count_gte",
+      "path": "journal",
+      "value": 1,
+      "excludeBaseline": true
+    },
     "message": "This world has no journal entries of your own.",
     "hint": "Even one entry per room is enough to run from. Journals are the thing you read at the table, so they are prep rather than decoration."
   },
@@ -162,7 +219,11 @@
     "week": 1,
     "competency": "Vanilla-first discipline",
     "scope": "world",
-    "predicate": { "op": "lte", "path": "activeModuleCount", "value": 5 },
+    "predicate": {
+      "op": "lte",
+      "path": "activeModuleCount",
+      "value": 5
+    },
     "message": "More than five modules are active. Every one of them is a thing that can break in a way you cannot diagnose yet.",
     "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick."
   },
@@ -174,7 +235,10 @@
     "predicate": {
       "op": "some",
       "path": "players",
-      "where": { "op": "exists", "path": "characterId" }
+      "where": {
+        "op": "exists",
+        "path": "characterId"
+      }
     },
     "message": "No player user has a character assigned, so nobody will control a token when they log in.",
     "hint": "User Management: assign each player's user to their actor. Without it a player connects and can move nothing."

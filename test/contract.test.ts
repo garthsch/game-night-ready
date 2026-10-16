@@ -112,6 +112,31 @@ describe("ISC-27 — tier one carries no AI dependency and names no adventure", 
   });
 });
 
+describe("ISC-30 — the module cannot gate or mutate anything", () => {
+  const entry = SOURCES.find(s => s.file === "module.mjs")!.text;
+
+  test("no cancellable pre* hook is registered", () => {
+    const hooks = [...entry.matchAll(/Hooks\.(?:on|once)\("([A-Za-z]+)"/g)].map(m => m[1]);
+    expect(hooks.length).toBeGreaterThan(0);
+    for ( const hook of hooks ) expect(hook.startsWith("pre")).toBe(false);
+  });
+
+  test("no hook callback returns false, which is how a Foundry hook cancels", () => {
+    for ( const { file, text } of SOURCES ) {
+      if ( file === "predicate.mjs" ) continue; // pure logic, not a hook callback
+      expect(text.includes("return false")).toBe(false);
+    }
+  });
+
+  test("the only write anywhere is the module's own setting", () => {
+    const writes = SOURCES.flatMap(s =>
+      [...s.text.matchAll(/\.(update|create|delete|createEmbeddedDocuments|updateEmbeddedDocuments|deleteEmbeddedDocuments)\(/g)]
+        .map(m => `${s.file}:${m[1]}`));
+    expect(writes).toEqual([]);
+    expect(entry).toContain("game.settings.set(MODULE_ID, SETTINGS.BASELINE");
+  });
+});
+
 describe("ISC-22 — the manifest", () => {
   const manifest = JSON.parse(readFileSync(join(ROOT, "module.json"), "utf8"));
   test("declares minimum core 14", () => {

@@ -42,7 +42,9 @@ Hooks.once("ready", async () => {
 
 async function loadChecks() {
   try {
-    const response = await fetch(`modules/${MODULE_ID}/data/checks.json`);
+    // getRoute keeps this correct behind a routePrefix, where a relative path would 404.
+    const url = foundry.utils.getRoute(`modules/${MODULE_ID}/data/checks.json`);
+    const response = await fetch(url);
     if ( !response.ok ) throw new Error(`HTTP ${response.status}`);
     return await response.json();
   }
