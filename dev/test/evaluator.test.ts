@@ -123,9 +123,20 @@ describe("runChecks against a seeded scene", () => {
     expect(results.filter(r => r.status === STATUS.ERROR)).toEqual([]);
   });
 
+  test("a row that ignores the adventure baseline says so in its sentence", () => {
+    // After an import, "this scene has no walls" is false on a scene with two.
+    // Every excludeBaseline row has to read true whether or not anything shipped.
+    for ( const row of checks ) {
+      const excludes = row.predicate.excludeBaseline
+        || (row.predicate.of ?? []).some((p: any) => p.excludeBaseline);
+      if ( !excludes ) continue;
+      expect(`${row.message} ${row.done}`.toLowerCase()).toMatch(/you |your |of your own/);
+    }
+  });
+
   test("results carry the message and hint for display", () => {
     const row = results.find(r => r.id === "canvas.lights.placed")!;
-    expect(row.message).toMatch(/no light anywhere/i);
+    expect(row.message).toMatch(/no light of your own/i);
     expect(row.hint).toMatch(/ambient light/i);
   });
 });
