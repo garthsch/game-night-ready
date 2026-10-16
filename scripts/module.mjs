@@ -9,6 +9,7 @@
 
 import { runChecks, validateChecks } from "./evaluator.mjs";
 import { collectScopes, MODULE_ID } from "./scopes.mjs";
+import { countsFor, invalidate, WATCHED_DOCUMENTS } from "./state.mjs";
 import { showReport } from "./report.mjs";
 
 const SETTINGS = {
@@ -108,20 +109,59 @@ export async function run() {
 const BUTTON_IN = ["tokens", "walls", "lighting"];
 
 Hooks.on("getSceneControlButtons", controls => {
+  const counts = currentCounts();
+  const outstanding = counts?.outstanding ?? 0;
+  const title = outstanding
+    ? game.i18n.format("GAME_NIGHT_READY.ButtonTitleCount", { count: outstanding })
+    : "GAME_NIGHT_READY.ButtonTitle";
+
   for ( const groupName of BUTTON_IN ) {
     const group = controls[groupName];
     if ( !group ) continue;
     group.tools ??= {};
     group.tools.gameNightReady = {
       name: "gameNightReady",
-      title: "GAME_NIGHT_READY.ButtonTitle",
-      icon: "fa-solid fa-clipboard-check",
+      title,
+      // Duotone when there is something to say, plain when there is not. This is
+      // core's own idiom for a state-carrying control: see
+      // SceneControls#_updateNotesIcon, which toggles the Notes icon the same way.
+      icon: outstanding
+        ? "fa-duotone fa-clipboard-check gnr-has-outstanding"
+        : "fa-solid fa-clipboard-check",
       order: Object.keys(group.tools).length,
       button: true,
       visible: game.user.isGM,
       onChange: () => run()
     };
   }
+});
+
+/** Counts for the scene being viewed, or null when there is nothing to read. */
+function currentCounts() {
+  if ( !game?.ready || !CHECKS.length ) return null;
+  const scopes = collectScopes();
+  if ( !scopes.scene ) return null;
+  return countsFor(scopes.scene, CHECKS, scopes, { baseline: baselineIdsFor(scopes.scene) });
+}
+
+/**
+ * Recompute and re-badge after a document the checks read changes.
+ *
+ * Debounced because tracing walls emits one create per segment, and every
+ * listener here is read-only: none is a `pre*` hook and none returns false.
+ */
+const refresh = foundry.utils.debounce(() => {
+  invalidate();
+  ui.controls?.render({ reset: true });
+}, 500);
+
+Hooks.once("ready", () => {
+  for ( const documentName of WATCHED_DOCUMENTS ) {
+    for ( const op of ["create", "update", "delete"] ) {
+      Hooks.on(`${op}${documentName}`, refresh);
+    }
+  }
+  Hooks.on("canvasReady", refresh);
 });
 
 /* -------------------------------------------- */

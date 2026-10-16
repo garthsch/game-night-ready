@@ -3,5 +3,6 @@
   "GAME_NIGHT_READY.ButtonTitle": "Check this world",
   "GAME_NIGHT_READY.DialogTitle": "Game Night Ready",
   "GAME_NIGHT_READY.KeybindingName": "Run the readiness check",
-  "GAME_NIGHT_READY.KeybindingHint": "Report what is still outstanding in the scene you are looking at."
+  "GAME_NIGHT_READY.KeybindingHint": "Report what is still outstanding in the scene you are looking at.",
+  "GAME_NIGHT_READY.ButtonTitleCount": "Game Night Ready — {count} outstanding"
 }

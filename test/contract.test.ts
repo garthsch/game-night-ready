@@ -161,12 +161,30 @@ describe("the module cannot gate or mutate anything", () => {
     }
   });
 
-  test("the only write anywhere is the module's own setting", () => {
+  test("the only document write anywhere is the module's own setting", () => {
+    // Capture the receiver, not just the method name: `cache.delete(id)` on a
+    // local Map is not a document write, and a bare method-name grep cannot
+    // tell the two apart. Receivers allowed here are local data structures.
+    const LOCAL = ["cache"];
     const writes = SOURCES.flatMap(s =>
-      [...s.text.matchAll(/\.(update|create|delete|createEmbeddedDocuments|updateEmbeddedDocuments|deleteEmbeddedDocuments)\(/g)]
-        .map(m => `${s.file}:${m[1]}`));
+      [...s.text.matchAll(/([A-Za-z_$][\w$]*)\.(update|create|delete|createEmbeddedDocuments|updateEmbeddedDocuments|deleteEmbeddedDocuments)\(/g)]
+        .filter(m => !LOCAL.includes(m[1]))
+        .map(m => `${s.file}: ${m[1]}.${m[2]}()`));
     expect(writes).toEqual([]);
     expect(entry).toContain("game.settings.set(MODULE_ID, SETTINGS.BASELINE");
+  });
+
+  test("every watched-document listener is a plain read-only hook", () => {
+    const state = SOURCES.find(s => s.file === "state.mjs")!.text;
+    // The refresh listeners are generated from this list, so a `pre` prefix
+    // could never reach them, but assert the list itself stays document names.
+    const match = state.match(/WATCHED_DOCUMENTS = \[([^\]]*)\]/s);
+    expect(match).not.toBeNull();
+    for ( const name of match![1].split(",").map(s => s.trim().replace(/"/g, "")).filter(Boolean) ) {
+      expect(name).toMatch(/^[A-Z][A-Za-z]+$/);
+      expect(name.startsWith("pre")).toBe(false);
+    }
+    expect(entry).toContain('for ( const op of ["create", "update", "delete"] )');
   });
 });
 
