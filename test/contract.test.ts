@@ -115,6 +115,29 @@ describe("no AI dependency, and no adventure named", () => {
 describe("the module cannot gate or mutate anything", () => {
   const entry = SOURCES.find(s => s.file === "module.mjs")!.text;
 
+  test("every lang key the code references exists in en.json", () => {
+    const lang = JSON.parse(readFileSync(join(ROOT, "lang/en.json"), "utf8"));
+    const referenced = SOURCES.flatMap(s =>
+      [...s.text.matchAll(/"(GAME_NIGHT_READY\.[A-Za-z]+)"/g)].map(m => m[1]));
+    expect(referenced.length).toBeGreaterThan(0);
+    // Flat keys with literal dots, so compare against the key list: toHaveProperty
+    // would read the dot as a nested path and report every key missing.
+    for ( const key of new Set(referenced) ) expect(Object.keys(lang)).toContain(key);
+  });
+
+  test("the button lives in its own control group, not inside Token tools", () => {
+    // A tool inside controls.tokens only renders while Token is the active
+    // group, which hides it part-way through walling and lighting.
+    expect(entry).not.toContain("controls.tokens");
+    expect(entry).toContain("controls[MODULE_ID]");
+    expect(entry).toMatch(/tools:\s*\{\s*run:/);
+  });
+
+  test("the keybinding is GM-restricted, like the button", () => {
+    expect(entry).toContain("game.keybindings.register");
+    expect(entry).toContain("restricted: true");
+  });
+
   test("no cancellable pre* hook is registered", () => {
     const hooks = [...entry.matchAll(/Hooks\.(?:on|once)\("([A-Za-z]+)"/g)].map(m => m[1]);
     expect(hooks.length).toBeGreaterThan(0);

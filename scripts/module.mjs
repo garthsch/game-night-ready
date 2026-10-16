@@ -28,6 +28,16 @@ Hooks.once("init", () => {
   });
 });
 
+Hooks.once("init", () => {
+  game.keybindings.register(MODULE_ID, "run", {
+    name: "GAME_NIGHT_READY.KeybindingName",
+    hint: "GAME_NIGHT_READY.KeybindingHint",
+    editable: [{ key: "KeyG", modifiers: ["Control", "Shift"] }],
+    restricted: true,
+    onDown: () => { run(); return true; }
+  });
+});
+
 Hooks.once("ready", async () => {
   CHECKS = await loadChecks();
   const problems = validateChecks(CHECKS);
@@ -76,18 +86,34 @@ export async function run() {
 /*  The button                                  */
 /* -------------------------------------------- */
 
+/**
+ * Its own control group rather than a tool inside Token controls.
+ *
+ * A readiness check is not a token tool, and a tool only renders while its
+ * parent group is the active one -- which would hide the button exactly when it
+ * is most wanted, part-way through walling and lighting. A top-level group
+ * stays visible on every layer. SceneControl has no `layer` property, so a
+ * group that owns no canvas layer is legitimate, and the cleaning pass keeps a
+ * group that has at least one visible tool.
+ */
 Hooks.on("getSceneControlButtons", controls => {
-  const tokens = controls.tokens;
-  if ( !tokens ) return;
-  tokens.tools ??= {};
-  tokens.tools.gameNightReady = {
-    name: "gameNightReady",
-    title: "GAME_NIGHT_READY.ButtonTitle",
+  controls[MODULE_ID] = {
+    name: MODULE_ID,
+    title: "GAME_NIGHT_READY.ControlTitle",
     icon: "fa-solid fa-clipboard-check",
-    order: Object.keys(tokens.tools).length,
-    button: true,
+    order: 100,
     visible: game.user.isGM,
-    onChange: () => run()
+    tools: {
+      run: {
+        name: "run",
+        title: "GAME_NIGHT_READY.ButtonTitle",
+        icon: "fa-solid fa-clipboard-check",
+        order: 0,
+        button: true,
+        visible: game.user.isGM,
+        onChange: () => run()
+      }
+    }
   };
 });
 

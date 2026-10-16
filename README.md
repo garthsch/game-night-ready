@@ -26,6 +26,20 @@ Whether the room is worth walking into is yours to judge.
 The report states the last two limits itself, so a clean run never reads as
 "this session will go well".
 
+## Where the button is
+
+Three ways in, all GM-only:
+
+- **Game Night Ready** is its own group in the left-hand scene controls, so it
+  stays visible whichever layer you are on. Click it, then click *Check this
+  world*.
+- **Ctrl+Shift+G**, rebindable under Configure Controls.
+- `game.modules.get("game-night-ready").api.run()` from a macro or the console,
+  if you would rather put it on your hotbar.
+
+There are no settings. A readiness check with a preferences page has lost the
+plot.
+
 ## The verdict
 
 The headline is the module's name, and it is a claim, so it is three-valued
@@ -95,7 +109,7 @@ the walls have to be built either way.
 bun test
 ```
 
-83 tests, no Foundry required: the evaluator and predicates are pure and run
+88 tests, no Foundry required: the evaluator and predicates are pure and run
 against plain objects.
 
 ## Licence
