@@ -62,13 +62,33 @@ export function verdict(counts) {
 }
 
 /**
+ * The one thing to do next.
+ *
+ * The rows carry the course week they belong to, so week order is already the
+ * path from a fresh world to a running game. The earliest outstanding row is
+ * therefore the next step, and its hint is the instruction for it.
+ *
+ * @param {object[]} results
+ * @returns {object|null} The result to lead with, or null when nothing is outstanding.
+ */
+export function nextAction(results) {
+  const outstanding = results.filter(r => r.status === STATUS.OUTSTANDING);
+  if ( !outstanding.length ) return null;
+  // Stable: ties inside a week fall back to row order, which is the order the
+  // rows are written in, which is the order the course teaches them.
+  return outstanding.reduce((best, row) => (row.week < best.week) ? row : best, outstanding[0]);
+}
+
+/**
  * @param {object[]} results
  * @param {object} context  { sceneName, worldTitle, baselineCount }
  * @returns {string} HTML
  */
 export function buildReportHtml(results, context = {}) {
   const { counts, byCompetency } = summarise(results);
-  const sceneName = context.sceneName ?? "no scene";
+  const sceneName = context.onFoundryDefaultScene
+    ? "Foundry's own starting scene, so nothing scene-specific could be read"
+    : (context.sceneName ?? "no scene");
   const parts = [];
 
   parts.push(`<div class="game-night-ready">`);
@@ -80,23 +100,31 @@ export function buildReportHtml(results, context = {}) {
   parts.push(`<p class="gnr-subject">Scene: <strong>${escapeHtml(sceneName)}</strong>`
     + `${context.worldTitle ? ` &middot; World: <strong>${escapeHtml(context.worldTitle)}</strong>` : ""}</p>`);
 
+  const next = nextAction(results);
+  if ( next ) {
+    parts.push(`<div class="gnr-next"><p class="gnr-next-label">Do this next</p>`
+      + `<p class="gnr-next-what">${escapeHtml(next.message)}</p>`
+      + `<p class="gnr-next-how">${escapeHtml(next.hint)}</p></div>`);
+  }
+
   if ( context.baselineCount ) {
     parts.push(`<p class="gnr-baseline">Ignoring ${context.baselineCount} document(s) that arrived with the`
       + ` imported adventure, so this reports what you added.</p>`);
   }
 
-  // Groups with work come first, so a GM never scrolls past finished sections to
-  // find what is left. Within a group, outstanding first.
-  const groups = [...byCompetency].sort((a, b) =>
-    b[1].filter(r => r.status === STATUS.OUTSTANDING).length
-    - a[1].filter(r => r.status === STATUS.OUTSTANDING).length);
+  // Groups run in course order, earliest week first, so the report reads as the
+  // path from a fresh world to a running game rather than as a ranked audit.
+  const groups = [...byCompetency].sort((a, b) => earliestWeek(a[1]) - earliestWeek(b[1]));
   for ( const [competency, rows] of groups ) {
     const ordered = [...rows].sort((a, b) => rank(a.status) - rank(b.status));
     parts.push(`<h3 class="gnr-competency">${escapeHtml(competency)}</h3><ul class="gnr-rows">`);
     for ( const row of ordered ) {
       parts.push(`<li class="gnr-row gnr-${row.status}">`);
       parts.push(`<span class="gnr-status">${STATUS_LABEL[row.status]}</span> `);
-      parts.push(`<span class="gnr-message">${escapeHtml(row.message)}</span>`);
+      // A passing row states what was found. Printing the failure sentence under
+      // a "done" label asserts the opposite of what the check established.
+      const sentence = (row.status === STATUS.PASS) ? row.done : row.message;
+      parts.push(`<span class="gnr-message">${escapeHtml(sentence)}</span>`);
       if ( row.status === STATUS.OUTSTANDING ) {
         parts.push(`<div class="gnr-hint">${escapeHtml(row.hint)}</div>`);
       }
@@ -118,6 +146,11 @@ export function buildReportHtml(results, context = {}) {
     + ` A wall in the wrong place passes. Whether the room is worth walking into is yours to judge.</p>`);
   parts.push(`</div>`);
   return parts.join("");
+}
+
+/** The course week a group starts at. */
+function earliestWeek(rows) {
+  return rows.reduce((lowest, row) => Math.min(lowest, row.week), Infinity);
 }
 
 function rank(status) {

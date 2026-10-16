@@ -322,16 +322,47 @@ describe("report ordering and labels, found by looking at the real dialog", () =
     expect(checks.every(r => typeof r.week === "number")).toBe(true);
   });
 
-  test("groups with outstanding work sort above finished ones", () => {
-    // The live report put a week-1 Vanilla-first row below week-5 rows purely
-    // because its competency appeared later in checks.json.
+  test("groups run in course order, earliest week first", () => {
+    // Replaces the old most-work-first rule (2026-10-16). The report's job is to
+    // show the path from a fresh world to a running game, so week order is the
+    // order, and the single next step is surfaced separately above the list.
     const results = [
-      { id: "a", competency: "Finished", status: "pass", week: 1, message: "m", hint: "h" },
-      { id: "b", competency: "Has work", status: "outstanding", week: 9, message: "m", hint: "h" },
-      { id: "c", competency: "Has work", status: "outstanding", week: 9, message: "m", hint: "h" }
+      { id: "a", competency: "Later", status: "outstanding", week: 5, message: "m", done: "d", hint: "h" },
+      { id: "b", competency: "Later", status: "outstanding", week: 5, message: "m", done: "d", hint: "h" },
+      { id: "c", competency: "Earlier", status: "pass", week: 1, message: "m", done: "d", hint: "h" }
     ];
     const html = buildReportHtml(results as any, {});
-    expect(html.indexOf("Has work")).toBeLessThan(html.indexOf("Finished"));
+    // Earlier week wins even though it is finished and appears last in the data.
+    expect(html.indexOf("Earlier")).toBeLessThan(html.indexOf("Later"));
+  });
+
+  test("a passing row states what was found, never the failure sentence", () => {
+    // The live report printed "done :: There is no light anywhere on this scene"
+    // on a scene carrying five lights.
+    const results = [
+      { id: "a", competency: "C", status: "pass", week: 1, message: "There is no light anywhere.", done: "There is light on this scene.", hint: "h" }
+    ];
+    const html = buildReportHtml(results as any, {});
+    expect(html).toContain("There is light on this scene.");
+    expect(html).not.toContain("There is no light anywhere.");
+  });
+
+  test("the report leads with the earliest outstanding row and its hint", () => {
+    const results = [
+      { id: "a", competency: "C", status: "outstanding", week: 4, message: "late gap", done: "d", hint: "do the late thing" },
+      { id: "b", competency: "C", status: "outstanding", week: 2, message: "early gap", done: "d", hint: "do the early thing" }
+    ];
+    const html = buildReportHtml(results as any, {});
+    expect(html).toContain("Do this next");
+    expect(html).toContain("do the early thing");
+    expect(html.indexOf("early gap")).toBeLessThan(html.indexOf("late gap"));
+  });
+
+  test("a clean run has no next step to name", () => {
+    const results = [
+      { id: "a", competency: "C", status: "pass", week: 1, message: "m", done: "d", hint: "h" }
+    ];
+    expect(buildReportHtml(results as any, {})).not.toContain("Do this next");
   });
 
   test("the verdict is pinned inside a bounded scroll container", () => {

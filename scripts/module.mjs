@@ -81,7 +81,8 @@ export async function run() {
   await showReport(results, {
     sceneName: scopes.scene?.name ?? null,
     worldTitle: game.world?.title ?? null,
-    baselineCount: baseline.size
+    baselineCount: baseline.size,
+    onFoundryDefaultScene: scopes.onFoundryDefaultScene
   });
   return results;
 }

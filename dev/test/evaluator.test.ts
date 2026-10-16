@@ -8,11 +8,19 @@ function collection(members: any[]) {
 }
 
 describe("validateChecks — the shipped rows", () => {
-  test("every shipped row carries all seven required fields", () => {
+  test("every shipped row carries all eight required fields", () => {
     expect(validateChecks(checks)).toEqual([]);
   });
-  test("there are exactly seven required fields", () => {
-    expect(REQUIRED_FIELDS).toEqual(["id", "week", "competency", "scope", "predicate", "message", "hint"]);
+  test("there are exactly eight required fields", () => {
+    expect(REQUIRED_FIELDS).toEqual(["id", "week", "competency", "scope", "predicate", "message", "done", "hint"]);
+  });
+  test("every shipped row states what was found as well as what is missing", () => {
+    // A done label over a failure sentence asserts the opposite of the finding.
+    for ( const row of checks ) {
+      expect(typeof row.done).toBe("string");
+      expect(row.done.length).toBeGreaterThan(0);
+      expect(row.done).not.toBe(row.message);
+    }
   });
   test("every shipped row names a rubric competency", () => {
     for ( const row of checks ) expect(typeof row.competency).toBe("string");
@@ -129,7 +137,8 @@ describe("runChecks on a finished scene", () => {
     tokens: collection([{ id: "t1", sight: { enabled: true }, light: { dim: 0, bright: 0 }, actorId: "a1" }]),
     notes: collection([{ id: "n1", entryId: "j1" }])
   };
-  const world = { activeModuleCount: 1, journal: [{ id: "j1" }], players: [{ id: "u1", characterId: "a1" }] };
+  const world = { activeModuleCount: 1, journal: [{ id: "j1" }], players: [{ id: "u1", characterId: "a1" }],
+    scenes: [{ id: "scene2" }] };
 
   test("nothing is outstanding", () => {
     const results = runChecks(checks, { scene: goodScene, world, user: { id: "gm" } });

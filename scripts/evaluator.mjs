@@ -11,8 +11,8 @@
 
 import { evaluatePredicate, UNAVAILABLE } from "./predicate.mjs";
 
-/** The seven fields every row must carry. */
-export const REQUIRED_FIELDS = ["id", "week", "competency", "scope", "predicate", "message", "hint"];
+/** The eight fields every row must carry. `message` states what is missing, `done` what was found. */
+export const REQUIRED_FIELDS = ["id", "week", "competency", "scope", "predicate", "message", "done", "hint"];
 
 export const STATUS = {
   PASS: "pass",
@@ -62,6 +62,7 @@ export function runChecks(rows, scopes, options = {}) {
       competency: row.competency,
       scope: row.scope,
       message: row.message,
+      done: row.done,
       hint: row.hint
     };
     if ( !(row.scope in scopes) ) {

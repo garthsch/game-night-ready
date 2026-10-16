@@ -12,9 +12,27 @@
 
 export const MODULE_ID = "game-night-ready";
 
-/** The scene a check should be read against: whichever one the GM is looking at. */
-export function currentScene() {
+/**
+ * The id of the scene Foundry creates with every new world. Fixed string, so
+ * recognising it costs one comparison and survives any artwork change.
+ */
+export const FOUNDRY_DEFAULT_SCENE_ID = "NUEDEFAULTSCENE0";
+
+/** Whatever scene the GM is looking at, including Foundry's own. */
+export function viewedScene() {
   return game.scenes?.viewed ?? canvas?.scene ?? null;
+}
+
+/**
+ * The scene a check should be read against.
+ *
+ * Foundry's shipped scene has a background, five lights and global illumination
+ * off, so grading it hands the GM four passes for work they did not do. It is
+ * not a scene under construction, so there is nothing here to read.
+ */
+export function currentScene() {
+  const scene = viewedScene();
+  return (scene && (scene.id !== FOUNDRY_DEFAULT_SCENE_ID)) ? scene : null;
 }
 
 /**
@@ -44,9 +62,11 @@ export function worldContext() {
 
 /** Everything a run needs, assembled once. */
 export function collectScopes() {
+  const viewed = viewedScene();
   return {
     scene: currentScene(),
     world: worldContext(),
-    user: game?.user ?? null
+    user: game?.user ?? null,
+    onFoundryDefaultScene: viewed?.id === FOUNDRY_DEFAULT_SCENE_ID
   };
 }

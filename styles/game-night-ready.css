@@ -44,3 +44,30 @@
 .game-night-ready .gnr-verdict-ready { color: #4a7d3f; }
 .game-night-ready .gnr-verdict-not-ready { color: #c9741f; }
 .game-night-ready .gnr-verdict-unknown { color: #8a8a8a; }
+
+/* The next step. One instruction, ahead of the full list, because a GM working
+   from a fresh world needs the next move more than they need the audit. */
+.game-night-ready .gnr-next {
+  margin: 0.75rem 0 1rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--color-warm-2, #c9a227);
+  background: rgba(201, 162, 39, 0.08);
+}
+
+.game-night-ready .gnr-next-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.game-night-ready .gnr-next-what {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+}
+
+.game-night-ready .gnr-next-how {
+  margin: 0;
+  opacity: 0.9;
+}

@@ -1,5 +1,23 @@
 [
   {
+    "id": "canvas.scene.own",
+    "week": 2,
+    "competency": "Canvas and spatial calibration",
+    "scope": "world",
+    "predicate": {
+      "op": "some",
+      "path": "scenes",
+      "where": {
+        "op": "neq",
+        "path": "id",
+        "value": "NUEDEFAULTSCENE0"
+      }
+    },
+    "message": "This world has no scene of your own yet, only the one Foundry ships with a new world.",
+    "done": "This world has at least one scene you made.",
+    "hint": "Open the Scenes directory and create a scene, then open it. The scene a new world starts on is Foundry's own splash screen, and none of it is your work."
+  },
+  {
     "id": "canvas.background.present",
     "week": 2,
     "competency": "Canvas and spatial calibration",
@@ -13,6 +31,7 @@
       }
     },
     "message": "No level in this scene has a background image.",
+    "done": "At least one level in this scene has a background image.",
     "hint": "Open Scene Configuration and set a background image on at least one level. In v14 the image lives on a Level, not on the Scene itself."
   },
   {
@@ -36,6 +55,7 @@
       ]
     },
     "message": "The grid is still at the 100px default, so it has probably not been matched to the map.",
+    "done": "The grid has been set deliberately: either resized from the 100px default or set to gridless.",
     "hint": "Use the grid configuration tool to line the grid up with the squares on your map, or set the grid to Gridless if the map has no usable grid. Either counts: both are a decision."
   },
   {
@@ -50,6 +70,7 @@
       "excludeBaseline": true
     },
     "message": "This scene has no walls, so tokens will walk through everything and nothing will block sight.",
+    "done": "This scene has walls.",
     "hint": "Use the Walls tool to trace the outside of each room and corridor. Walls are what make lighting and vision mean anything."
   },
   {
@@ -68,6 +89,7 @@
       "excludeBaseline": true
     },
     "message": "No wall on this scene is configured as a door. If your map genuinely has no doors, this is expected.",
+    "done": "At least one wall on this scene is configured as a door.",
     "hint": "Select a wall segment across a doorway and set its Door type. A door you can open at the table is worth more than a wall you have to delete."
   },
   {
@@ -86,6 +108,7 @@
       "excludeBaseline": true
     },
     "message": "No wall on this scene is set to block sight, so nothing will hide the map from your players.",
+    "done": "At least one wall on this scene is set to block sight.",
     "hint": "A wall's Sight restriction controls what players can see past it. Walls set to None are movement-only barriers, which is right for a railing and wrong for a wall."
   },
   {
@@ -124,6 +147,7 @@
       ]
     },
     "message": "There is no light anywhere on this scene: no ambient light placed and no token carrying one.",
+    "done": "There is light on this scene, either an ambient light or a token carrying one.",
     "hint": "Place an ambient light, or configure a light on the token carrying a torch. A deliberately dark dungeon still needs one light source for the darkness to read as darkness."
   },
   {
@@ -136,6 +160,7 @@
       "path": "tokenVision"
     },
     "message": "Token Vision is turned off for this scene, so all your wall and lighting work will be invisible to players.",
+    "done": "Token Vision is on for this scene.",
     "hint": "Scene Configuration, Vision tab: enable Token Vision. Leave it off only for a map you intend everyone to see all of at once."
   },
   {
@@ -152,6 +177,7 @@
       }
     },
     "message": "No token on this scene has vision enabled, so no player token will see anything.",
+    "done": "At least one token on this scene has vision enabled.",
     "hint": "Open a player token's configuration and enable Vision with a sight range. Without it the token is blind regardless of the scene setting."
   },
   {
@@ -164,6 +190,7 @@
       "path": "environment.globalLight.enabled"
     },
     "message": "Global Illumination is on, which lights the whole map evenly. If this is an outdoor daylight scene that is correct; on a dungeon it hides your lighting work.",
+    "done": "Global Illumination is off, so the lights you place do the work.",
     "hint": "Scene Configuration, Lighting: turn Global Illumination off to let your placed lights do the work."
   },
   {
@@ -181,6 +208,7 @@
       "excludeBaseline": true
     },
     "message": "No token on this scene is linked to an actor, so nothing on the canvas has a character sheet behind it.",
+    "done": "At least one token on this scene is linked to an actor.",
     "hint": "Drag actors from the Actors directory onto the canvas rather than creating bare tokens. An unlinked token cannot roll, take damage or appear in combat properly."
   },
   {
@@ -198,6 +226,7 @@
       "excludeBaseline": true
     },
     "message": "This scene carries no map notes linked to journal entries, so your prep is not reachable from the map at the table.",
+    "done": "At least one map note on this scene is linked to a journal entry.",
     "hint": "Use the Notes tool to pin a journal entry to each keyed location. At the table you click the pin instead of hunting through the journal."
   },
   {
@@ -212,6 +241,7 @@
       "excludeBaseline": true
     },
     "message": "This world has no journal entries of your own.",
+    "done": "This world has journal entries of your own.",
     "hint": "Even one entry per room is enough to run from. Journals are the thing you read at the table, so they are prep rather than decoration."
   },
   {
@@ -225,6 +255,7 @@
       "value": 5
     },
     "message": "More than five modules are active. Every one of them is a thing that can break in a way you cannot diagnose yet.",
+    "done": "Five or fewer modules are active, which is a stack you can still diagnose.",
     "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick."
   },
   {
@@ -241,6 +272,7 @@
       }
     },
     "message": "No player user has a character assigned, so nobody will control a token when they log in.",
+    "done": "At least one player user has a character assigned.",
     "hint": "User Management: assign each player's user to their actor. Without it a player connects and can move nothing."
   }
 ]
