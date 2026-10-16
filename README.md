@@ -121,7 +121,7 @@ of the module.
 bun test
 ```
 
-94 tests in `dev/test/`, no Foundry required: the evaluator and predicates are
+109 tests in `dev/test/`, no Foundry required: the evaluator and predicates are
 pure and run against plain objects.
 
 ## Licence
