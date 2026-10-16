@@ -125,7 +125,7 @@ function evaluateCollection(op, predicate, members, options) {
 
 /**
  * Drop members that arrived with an imported Adventure, so a re-run reports
- * what the learner added rather than what shipped (ISC-28).
+ * what the learner added rather than what shipped.
  */
 function filterBaseline(members, predicate, options) {
   if ( members === UNAVAILABLE ) return UNAVAILABLE;

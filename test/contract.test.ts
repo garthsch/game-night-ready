@@ -10,7 +10,7 @@ const SOURCES = readdirSync(join(ROOT, "scripts"))
   .filter(f => f.endsWith(".mjs"))
   .map(f => ({ file: f, text: readFileSync(join(ROOT, "scripts", f), "utf8") }));
 
-describe("ISC-26 — no check reads a DOM selector", () => {
+describe("no check reads a DOM selector", () => {
   // Selector and DOM-traversal APIs. A check must resolve through the document
   // model, which is typed and versioned; markup is neither.
   const BANNED = [
@@ -47,7 +47,7 @@ describe("ISC-26 — no check reads a DOM selector", () => {
   });
 });
 
-describe("ISC-23 — a new check is a row, not a code path", () => {
+describe("a new check is a row, not a code path", () => {
   test("a row invented here runs with no change to any source file", () => {
     // This row does not exist in data/checks.json. It exercises an operator
     // combination no shipped row uses. If it runs, the evaluator is generic.
@@ -85,7 +85,7 @@ describe("ISC-23 — a new check is a row, not a code path", () => {
   });
 });
 
-describe("ISC-27 — tier one carries no AI dependency and names no adventure", () => {
+describe("no AI dependency, and no adventure named", () => {
   const allText = [
     ...SOURCES.map(s => s.text),
     readFileSync(join(ROOT, "module.json"), "utf8"),
@@ -112,7 +112,7 @@ describe("ISC-27 — tier one carries no AI dependency and names no adventure", 
   });
 });
 
-describe("ISC-30 — the module cannot gate or mutate anything", () => {
+describe("the module cannot gate or mutate anything", () => {
   const entry = SOURCES.find(s => s.file === "module.mjs")!.text;
 
   test("no cancellable pre* hook is registered", () => {
@@ -137,7 +137,7 @@ describe("ISC-30 — the module cannot gate or mutate anything", () => {
   });
 });
 
-describe("ISC-22 — the manifest", () => {
+describe("the manifest", () => {
   const manifest = JSON.parse(readFileSync(join(ROOT, "module.json"), "utf8"));
   test("declares minimum core 14", () => {
     expect(manifest.compatibility.minimum).toBe("14");
@@ -164,7 +164,7 @@ describe("ISC-22 — the manifest", () => {
   });
 });
 
-describe("ISC-29 — the report says what it does not assess", () => {
+describe("the report says what it does not assess", () => {
   const results = runChecks(checks, { scene: null, world: null, user: null });
   const html = buildReportHtml(results, { sceneName: "Keep, upper floor" });
 

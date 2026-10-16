@@ -26,6 +26,21 @@ Whether the room is worth walking into is yours to judge.
 The report states the last two limits itself, so a clean run never reads as
 "this session will go well".
 
+## The verdict
+
+The headline is the module's name, and it is a claim, so it is three-valued
+rather than two:
+
+| Verdict | When |
+|---|---|
+| `Game Night Ready.` | Every check passed **and** every check could be read |
+| `Not game night ready yet: N outstanding.` | Something is missing |
+| `Can't tell yet: N checks could not be read.` | Nothing is outstanding, but a check could not read the field it needs |
+
+The third one matters. A check that could not read its field might be hiding a
+gap, so saying "ready" there would make the name a lie. With no scene open,
+every check reports unreadable and the module says so rather than passing you.
+
 ## Install
 
 Foundry v14 or later. Module management, Install Module, paste the manifest URL.

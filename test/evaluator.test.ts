@@ -7,7 +7,7 @@ function collection(members: any[]) {
   return Object.assign(map, { get contents() { return members; } });
 }
 
-describe("validateChecks — the shipped rows (ISC-24)", () => {
+describe("validateChecks — the shipped rows", () => {
   test("every shipped row carries all seven required fields", () => {
     expect(validateChecks(checks)).toEqual([]);
   });
@@ -20,7 +20,7 @@ describe("validateChecks — the shipped rows (ISC-24)", () => {
   test("every shipped row uses a scope the evaluator resolves", () => {
     for ( const row of checks ) expect(["scene", "world", "user"]).toContain(row.scope);
   });
-  test("the canvas family covers grid, walls, lights and token vision (ISC-25)", () => {
+  test("the canvas family covers grid, walls, lights and token vision", () => {
     const ids = checks.filter(r => r.competency === "Canvas and spatial calibration").map(r => r.id);
     expect(ids).toContain("canvas.grid.calibrated");
     expect(ids).toContain("canvas.walls.present");
@@ -137,7 +137,7 @@ describe("runChecks on a finished scene", () => {
   });
 });
 
-describe("runChecks never gates (ISC-30)", () => {
+describe("runChecks never gates", () => {
   test("no viewed scene yields unavailable, not failure", () => {
     const results = runChecks(checks, { scene: null, world: null, user: null });
     expect(results.every(r => r.status === STATUS.UNAVAILABLE)).toBe(true);

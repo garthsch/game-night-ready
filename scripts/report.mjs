@@ -1,7 +1,7 @@
 /**
  * Report rendering. Builds HTML from evaluator results; opens a DialogV2.
  *
- * The report always states what the module does not assess (ISC-29) and where
+ * The report always states what the module does not assess, and where
  * its view is partial, so a clean run never reads as "this session is ready".
  */
 

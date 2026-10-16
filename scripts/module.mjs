@@ -8,7 +8,7 @@
  */
 
 import { runChecks, validateChecks } from "./evaluator.mjs";
-import { collectScopes, currentScene, MODULE_ID } from "./scopes.mjs";
+import { collectScopes, MODULE_ID } from "./scopes.mjs";
 import { showReport } from "./report.mjs";
 
 const SETTINGS = {
@@ -92,7 +92,7 @@ Hooks.on("getSceneControlButtons", controls => {
 });
 
 /* -------------------------------------------- */
-/*  Per-learner baseline (ISC-28)               */
+/*  Per-learner baseline                        */
 /* -------------------------------------------- */
 
 /**

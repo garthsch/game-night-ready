@@ -6,7 +6,7 @@
  * means the evaluator and the predicates stay testable, and it is the one place
  * to look when a v15 field rename breaks a row.
  *
- * No DOM selectors anywhere (ISC-26): every value below comes from a documented
+ * No DOM selectors anywhere: every value below comes from a documented
  * document-model collection or document field.
  */
 

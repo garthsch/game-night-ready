@@ -1,5 +1,5 @@
 /**
- * The one generic evaluator (ISC-23).
+ * The one generic evaluator.
  *
  * It walks the check rows, resolves each row's scope to a context object,
  * runs the row's predicate, and returns a result per row. There is no
@@ -11,7 +11,7 @@
 
 import { evaluatePredicate, UNAVAILABLE } from "./predicate.mjs";
 
-/** The seven fields every row must carry (ISC-24). */
+/** The seven fields every row must carry. */
 export const REQUIRED_FIELDS = ["id", "week", "competency", "scope", "predicate", "message", "hint"];
 
 export const STATUS = {
