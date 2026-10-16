@@ -148,6 +148,12 @@ describe("the manifest", () => {
   test("requires nothing: no relationships block at all", () => {
     expect(manifest.relationships).toBeUndefined();
   });
+  test("carries the three URLs Foundry needs to install and update", () => {
+    expect(manifest.url).toBe("https://github.com/garthsch/game-night-ready");
+    expect(manifest.manifest).toMatch(/\/releases\/latest\/download\/module\.json$/);
+    expect(manifest.download).toMatch(/\/releases\/latest\/download\/module\.zip$/);
+  });
+
   test("registers via an esmodule, since there is no tours field in v14", () => {
     expect(manifest.esmodules).toEqual(["scripts/module.mjs"]);
     expect(manifest.tours).toBeUndefined();
