@@ -74,9 +74,16 @@ export function verdict(counts) {
 export function nextAction(results) {
   const outstanding = results.filter(r => r.status === STATUS.OUTSTANDING);
   if ( !outstanding.length ) return null;
+  // Course week is a teaching order, which is not the same as a dependency
+  // order: a GM cannot calibrate a grid before a scene exists to calibrate.
+  // A row that declares it unblocks a scope, in a run where that scope could
+  // not be read, is the step everything else is waiting on.
+  const unreadable = new Set(results.filter(r => r.status === STATUS.UNAVAILABLE).map(r => r.scope));
+  const blocking = outstanding.filter(r => r.unblocks && unreadable.has(r.unblocks));
+  const pool = blocking.length ? blocking : outstanding;
   // Stable: ties inside a week fall back to row order, which is the order the
   // rows are written in, which is the order the course teaches them.
-  return outstanding.reduce((best, row) => (row.week < best.week) ? row : best, outstanding[0]);
+  return pool.reduce((best, row) => (row.week < best.week) ? row : best, pool[0]);
 }
 
 /**

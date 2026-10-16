@@ -4,6 +4,7 @@
     "week": 2,
     "competency": "Canvas and spatial calibration",
     "scope": "world",
+    "unblocks": "scene",
     "predicate": {
       "op": "some",
       "path": "scenes",

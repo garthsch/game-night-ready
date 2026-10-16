@@ -63,7 +63,8 @@ export function runChecks(rows, scopes, options = {}) {
       scope: row.scope,
       message: row.message,
       done: row.done,
-      hint: row.hint
+      hint: row.hint,
+      unblocks: row.unblocks ?? null
     };
     if ( !(row.scope in scopes) ) {
       return { ...base, status: STATUS.ERROR, detail: `unknown scope \`${row.scope}\`` };

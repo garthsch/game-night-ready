@@ -358,6 +358,31 @@ describe("report ordering and labels, found by looking at the real dialog", () =
     expect(html.indexOf("early gap")).toBeLessThan(html.indexOf("late gap"));
   });
 
+  test("a blocked scope outranks course week for the next step", () => {
+    // Week order is the teaching order. It is not the dependency order: there is
+    // no point calibrating a grid on a scene that does not exist yet.
+    const results = [
+      { id: "admin", competency: "C", scope: "world", status: "outstanding", week: 1, message: "admin gap", done: "d", hint: "do the admin thing", unblocks: null },
+      { id: "own", competency: "C", scope: "world", status: "outstanding", week: 2, message: "no scene of your own", done: "d", hint: "make a scene", unblocks: "scene" },
+      { id: "grid", competency: "C", scope: "scene", status: "unavailable", week: 2, message: "grid", done: "d", hint: "h", unblocks: null }
+    ];
+    const html = buildReportHtml(results as any, {});
+    const next = html.slice(html.indexOf("Do this next"), html.indexOf("gnr-competency"));
+    expect(next).toContain("make a scene");
+    expect(next).not.toContain("do the admin thing");
+  });
+
+  test("an unblocking row yields to week order once its scope reads", () => {
+    const results = [
+      { id: "admin", competency: "C", scope: "world", status: "outstanding", week: 1, message: "admin gap", done: "d", hint: "do the admin thing", unblocks: null },
+      { id: "own", competency: "C", scope: "world", status: "outstanding", week: 2, message: "no scene of your own", done: "d", hint: "make a scene", unblocks: "scene" },
+      { id: "grid", competency: "C", scope: "scene", status: "outstanding", week: 2, message: "grid", done: "d", hint: "h", unblocks: null }
+    ];
+    const html = buildReportHtml(results as any, {});
+    const next = html.slice(html.indexOf("Do this next"), html.indexOf("gnr-competency"));
+    expect(next).toContain("do the admin thing");
+  });
+
   test("a clean run has no next step to name", () => {
     const results = [
       { id: "a", competency: "C", status: "pass", week: 1, message: "m", done: "d", hint: "h" }
