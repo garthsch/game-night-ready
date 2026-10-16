@@ -42,11 +42,20 @@ function escapeHtml(text) {
  * name a lie.
  */
 export function verdict(counts) {
+  const unread = counts.unavailable + counts.error;
+  const unreadClause = unread
+    ? ` ${unread} check${unread === 1 ? "" : "s"} could not be read, so this is not the whole picture.`
+    : "";
   if ( counts.outstanding > 0 ) {
-    return { state: "not-ready", label: `Not game night ready yet: ${counts.outstanding} outstanding.` };
+    // Both facts, never just the louder one: a real gap was found, and the
+    // reading was incomplete. Reporting only the gap count would imply the
+    // module looked at everything and found exactly that much.
+    return {
+      state: "not-ready",
+      label: `Not game night ready yet: ${counts.outstanding} outstanding.${unreadClause}`
+    };
   }
-  if ( (counts.unavailable > 0) || (counts.error > 0) ) {
-    const unread = counts.unavailable + counts.error;
+  if ( unread > 0 ) {
     return { state: "unknown", label: `Can't tell yet: ${unread} check${unread === 1 ? "" : "s"} could not be read.` };
   }
   return { state: "ready", label: "Game Night Ready." };

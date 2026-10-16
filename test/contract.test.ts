@@ -216,6 +216,22 @@ describe("the verdict headline is the name, and it is a claim", () => {
     expect(label).toContain("1 check could not be read");
   });
 
+  test("outstanding AND unreadable together: reports both, never just the gap count", () => {
+    // Found live: with no scene open, 11 scene checks are unreadable while two
+    // world checks are genuinely outstanding. Reporting "2 outstanding" alone
+    // implies the module looked at everything and found exactly two.
+    const { state, label } = verdict({ pass: 0, outstanding: 2, unavailable: 11, error: 0 });
+    expect(state).toBe("not-ready");
+    expect(label).toContain("2 outstanding");
+    expect(label).toContain("11 checks could not be read");
+    expect(label).toContain("not the whole picture");
+  });
+
+  test("a clean read needs no caveat clause", () => {
+    expect(verdict({ pass: 4, outstanding: 10, unavailable: 0, error: 0 }).label)
+      .toBe("Not game night ready yet: 10 outstanding.");
+  });
+
   test("a broken check also blocks the ready claim, and counts with the unreadable", () => {
     const { state, label } = verdict({ pass: 12, outstanding: 0, unavailable: 1, error: 1 });
     expect(state).toBe("unknown");
