@@ -1,10 +1,10 @@
 [
   {
     "id": "canvas.scene.own",
-    "week": 2,
+    "week": 1,
     "competency": "Canvas and spatial calibration",
+    "topic": "A scene of your own",
     "scope": "world",
-    "unblocks": "scene",
     "predicate": {
       "op": "some",
       "path": "scenes",
@@ -19,9 +19,25 @@
     "hint": "Open the Scenes directory and create a scene, then open it. The scene a new world starts on is Foundry's own splash screen, and none of it is your work."
   },
   {
+    "id": "admin.players.exist",
+    "week": 1,
+    "competency": "Server administration",
+    "topic": "Player accounts",
+    "scope": "world",
+    "predicate": {
+      "op": "count_gte",
+      "path": "players",
+      "value": 1
+    },
+    "message": "This world has no player users yet, so there is nobody to invite and nobody to hand a character to.",
+    "done": "This world has player users.",
+    "hint": "User Management: add a user per player at the Player role. Do it well before game night, since each of them needs the link and their password in hand rather than at the table."
+  },
+  {
     "id": "canvas.background.present",
     "week": 2,
     "competency": "Canvas and spatial calibration",
+    "topic": "A background image on the scene",
     "scope": "scene",
     "predicate": {
       "op": "some",
@@ -33,12 +49,14 @@
     },
     "message": "No level in this scene has a background image.",
     "done": "At least one level in this scene has a background image.",
-    "hint": "Open Scene Configuration and set a background image on at least one level. In v14 the image lives on a Level, not on the Scene itself."
+    "hint": "Open Scene Configuration and set a background image on at least one level. In v14 the image lives on a Level, not on the Scene itself.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "canvas.grid.calibrated",
     "week": 2,
     "competency": "Canvas and spatial calibration",
+    "topic": "Grid calibration",
     "scope": "scene",
     "predicate": {
       "op": "any_of",
@@ -57,12 +75,14 @@
     },
     "message": "The grid is still at the 100px default, so it has probably not been matched to the map.",
     "done": "The grid has been set deliberately: either resized from the 100px default or set to gridless.",
-    "hint": "Use the grid configuration tool to line the grid up with the squares on your map, or set the grid to Gridless if the map has no usable grid. Either counts: both are a decision."
+    "hint": "Use the grid configuration tool to line the grid up with the squares on your map, or set the grid to Gridless if the map has no usable grid. Either counts: both are a decision.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "canvas.walls.present",
     "week": 3,
     "competency": "Canvas and spatial calibration",
+    "topic": "Walls",
     "scope": "scene",
     "predicate": {
       "op": "count_gte",
@@ -72,12 +92,14 @@
     },
     "message": "This scene has no walls, so tokens will walk through everything and nothing will block sight.",
     "done": "This scene has walls.",
-    "hint": "Use the Walls tool to trace the outside of each room and corridor. Walls are what make lighting and vision mean anything."
+    "hint": "Use the Walls tool to trace the outside of each room and corridor. Walls are what make lighting and vision mean anything.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "canvas.walls.doors",
     "week": 3,
     "competency": "Canvas and spatial calibration",
+    "topic": "Doors",
     "scope": "scene",
     "predicate": {
       "op": "some",
@@ -91,12 +113,14 @@
     },
     "message": "No wall on this scene is configured as a door. If your map genuinely has no doors, this is expected.",
     "done": "At least one wall on this scene is configured as a door.",
-    "hint": "Select a wall segment across a doorway and set its Door type. A door you can open at the table is worth more than a wall you have to delete."
+    "hint": "Select a wall segment across a doorway and set its Door type. A door you can open at the table is worth more than a wall you have to delete.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "canvas.walls.sight-blocking",
     "week": 3,
     "competency": "Canvas and spatial calibration",
+    "topic": "Walls that block sight",
     "scope": "scene",
     "predicate": {
       "op": "some",
@@ -110,12 +134,14 @@
     },
     "message": "No wall on this scene is set to block sight, so nothing will hide the map from your players.",
     "done": "At least one wall on this scene is set to block sight.",
-    "hint": "A wall's Sight restriction controls what players can see past it. Walls set to None are movement-only barriers, which is right for a railing and wrong for a wall."
+    "hint": "A wall's Sight restriction controls what players can see past it. Walls set to None are movement-only barriers, which is right for a railing and wrong for a wall.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "canvas.lights.placed",
     "week": 4,
     "competency": "Canvas and spatial calibration",
+    "topic": "Light on the scene",
     "scope": "scene",
     "predicate": {
       "op": "any_of",
@@ -149,12 +175,14 @@
     },
     "message": "There is no light anywhere on this scene: no ambient light placed and no token carrying one.",
     "done": "There is light on this scene, either an ambient light or a token carrying one.",
-    "hint": "Place an ambient light, or configure a light on the token carrying a torch. A deliberately dark dungeon still needs one light source for the darkness to read as darkness."
+    "hint": "Place an ambient light, or configure a light on the token carrying a torch. A deliberately dark dungeon still needs one light source for the darkness to read as darkness.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "canvas.vision.scene-enabled",
     "week": 4,
     "competency": "Canvas and spatial calibration",
+    "topic": "Token Vision on the scene",
     "scope": "scene",
     "predicate": {
       "op": "truthy",
@@ -162,12 +190,14 @@
     },
     "message": "Token Vision is turned off for this scene, so all your wall and lighting work will be invisible to players.",
     "done": "Token Vision is on for this scene.",
-    "hint": "Scene Configuration, Vision tab: enable Token Vision. Leave it off only for a map you intend everyone to see all of at once."
+    "hint": "Scene Configuration, Vision tab: enable Token Vision. Leave it off only for a map you intend everyone to see all of at once.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "canvas.vision.token-sight",
     "week": 4,
     "competency": "Canvas and spatial calibration",
+    "topic": "Vision on a token",
     "scope": "scene",
     "predicate": {
       "op": "some",
@@ -179,12 +209,14 @@
     },
     "message": "No token on this scene has vision enabled, so no player token will see anything.",
     "done": "At least one token on this scene has vision enabled.",
-    "hint": "Open a player token's configuration and enable Vision with a sight range. Without it the token is blind regardless of the scene setting."
+    "hint": "Open a player token's configuration and enable Vision with a sight range. Without it the token is blind regardless of the scene setting.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "canvas.lighting.not-blanket",
     "week": 4,
     "competency": "Canvas and spatial calibration",
+    "topic": "Global illumination",
     "scope": "scene",
     "predicate": {
       "op": "falsy",
@@ -192,12 +224,14 @@
     },
     "message": "Global Illumination is on, which lights the whole map evenly. If this is an outdoor daylight scene that is correct; on a dungeon it hides your lighting work.",
     "done": "Global Illumination is off, so the lights you place do the work.",
-    "hint": "Scene Configuration, Lighting: turn Global Illumination off to let your placed lights do the work."
+    "hint": "Scene Configuration, Lighting: turn Global Illumination off to let your placed lights do the work.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "automation.tokens.actor-linked",
     "week": 5,
     "competency": "System automation execution",
+    "topic": "Tokens linked to actors",
     "scope": "scene",
     "predicate": {
       "op": "some",
@@ -210,12 +244,14 @@
     },
     "message": "No token on this scene is linked to an actor, so nothing on the canvas has a character sheet behind it.",
     "done": "At least one token on this scene is linked to an actor.",
-    "hint": "Drag actors from the Actors directory onto the canvas rather than creating bare tokens. An unlinked token cannot roll, take damage or appear in combat properly."
+    "hint": "Drag actors from the Actors directory onto the canvas rather than creating bare tokens. An unlinked token cannot roll, take damage or appear in combat properly.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "prep.notes.placed",
     "week": 5,
     "competency": "Visual tools and preparation",
+    "topic": "Map notes linked to journals",
     "scope": "scene",
     "predicate": {
       "op": "some",
@@ -228,12 +264,14 @@
     },
     "message": "This scene carries no map notes linked to journal entries, so your prep is not reachable from the map at the table.",
     "done": "At least one map note on this scene is linked to a journal entry.",
-    "hint": "Use the Notes tool to pin a journal entry to each keyed location. At the table you click the pin instead of hunting through the journal."
+    "hint": "Use the Notes tool to pin a journal entry to each keyed location. At the table you click the pin instead of hunting through the journal.",
+    "needs": "canvas.scene.own"
   },
   {
     "id": "prep.journal.present",
     "week": 5,
     "competency": "Visual tools and preparation",
+    "topic": "Journal entries of your own",
     "scope": "world",
     "predicate": {
       "op": "count_gte",
@@ -249,6 +287,7 @@
     "id": "vanilla.modules.restrained",
     "week": 1,
     "competency": "Vanilla-first discipline",
+    "topic": "A module stack you can diagnose",
     "scope": "world",
     "predicate": {
       "op": "lte",
@@ -263,6 +302,7 @@
     "id": "admin.gm.has-character",
     "week": 1,
     "competency": "Server administration",
+    "topic": "Characters assigned to players",
     "scope": "world",
     "predicate": {
       "op": "some",
@@ -274,6 +314,7 @@
     },
     "message": "No player user has a character assigned, so nobody will control a token when they log in.",
     "done": "At least one player user has a character assigned.",
-    "hint": "User Management: assign each player's user to their actor. Without it a player connects and can move nothing."
+    "hint": "User Management: assign each player's user to their actor. Without it a player connects and can move nothing.",
+    "needs": "admin.players.exist"
   }
 ]

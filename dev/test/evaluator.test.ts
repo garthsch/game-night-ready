@@ -8,11 +8,17 @@ function collection(members: any[]) {
 }
 
 describe("validateChecks — the shipped rows", () => {
-  test("every shipped row carries all eight required fields", () => {
+  test("every shipped row carries all nine required fields", () => {
     expect(validateChecks(checks)).toEqual([]);
   });
-  test("there are exactly eight required fields", () => {
-    expect(REQUIRED_FIELDS).toEqual(["id", "week", "competency", "scope", "predicate", "message", "done", "hint"]);
+  test("there are exactly nine required fields", () => {
+    expect(REQUIRED_FIELDS).toEqual(["id", "week", "competency", "topic", "scope", "predicate", "message", "done", "hint"]);
+  });
+  test("every shipped row names its subject for the case it cannot be read", () => {
+    for ( const row of checks ) {
+      expect(typeof row.topic).toBe("string");
+      expect(row.topic.length).toBeGreaterThan(0);
+    }
   });
   test("every shipped row states what was found as well as what is missing", () => {
     // A done label over a failure sentence asserts the opposite of the finding.
@@ -184,5 +190,33 @@ describe("summarise", () => {
     expect(counts).toEqual({ pass: 1, outstanding: 1, unavailable: 1, error: 0 });
     expect([...byCompetency.keys()]).toEqual(["X", "Y"]);
     expect(total).toBe(3);
+  });
+});
+
+describe("prerequisites between rows", () => {
+  const rows = [
+    { id: "accounts", week: 1, competency: "C", scope: "world", predicate: { op: "count_gte", path: "players", value: 1 },
+      message: "no players", done: "players exist", hint: "make accounts" },
+    { id: "assigned", week: 1, competency: "C", scope: "world", needs: "accounts",
+      predicate: { op: "some", path: "players", where: { op: "exists", path: "characterId" } },
+      message: "nobody assigned", done: "someone assigned", hint: "assign them" }
+  ];
+
+  test("a row waiting on an outstanding prerequisite reports unavailable", () => {
+    const [accounts, assigned] = runChecks(rows as any, { world: { players: [] } });
+    expect(accounts.status).toBe("outstanding");
+    expect(assigned.status).toBe("unavailable");
+    expect(assigned.detail).toContain("accounts");
+  });
+
+  test("the same row reports normally once its prerequisite passes", () => {
+    const [accounts, assigned] = runChecks(rows as any, { world: { players: [{ id: "u1", characterId: null }] } });
+    expect(accounts.status).toBe("pass");
+    expect(assigned.status).toBe("outstanding");
+  });
+
+  test("every shipped prerequisite names a row that exists", () => {
+    const ids = new Set(checks.map(r => r.id));
+    for ( const row of checks ) if ( row.needs ) expect(ids.has(row.needs)).toBe(true);
   });
 });

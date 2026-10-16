@@ -336,6 +336,17 @@ describe("report ordering and labels, found by looking at the real dialog", () =
     expect(html.indexOf("Earlier")).toBeLessThan(html.indexOf("Later"));
   });
 
+  test("an unreadable row names its subject and asserts nothing", () => {
+    // "could not read :: This scene has no walls" claims a finding the check
+    // never made, on a scene it never read.
+    const results = [
+      { id: "a", competency: "C", topic: "Walls", status: "unavailable", week: 3, message: "This scene has no walls.", done: "d", hint: "h" }
+    ];
+    const html = buildReportHtml(results as any, {});
+    expect(html).toContain("Walls");
+    expect(html).not.toContain("This scene has no walls.");
+  });
+
   test("a passing row states what was found, never the failure sentence", () => {
     // The live report printed "done :: There is no light anywhere on this scene"
     // on a scene carrying five lights.
@@ -358,13 +369,13 @@ describe("report ordering and labels, found by looking at the real dialog", () =
     expect(html.indexOf("early gap")).toBeLessThan(html.indexOf("late gap"));
   });
 
-  test("a blocked scope outranks course week for the next step", () => {
-    // Week order is the teaching order. It is not the dependency order: there is
-    // no point calibrating a grid on a scene that does not exist yet.
+  test("a step waiting on its prerequisite is never the next step", () => {
+    // The evaluator reports a blocked row as unavailable, so the next step is
+    // always something the GM can actually do right now.
     const results = [
-      { id: "admin", competency: "C", scope: "world", status: "outstanding", week: 1, message: "admin gap", done: "d", hint: "do the admin thing", unblocks: null },
-      { id: "own", competency: "C", scope: "world", status: "outstanding", week: 2, message: "no scene of your own", done: "d", hint: "make a scene", unblocks: "scene" },
-      { id: "grid", competency: "C", scope: "scene", status: "unavailable", week: 2, message: "grid", done: "d", hint: "h", unblocks: null }
+      { id: "admin", competency: "C", scope: "world", status: "outstanding", week: 2, message: "admin gap", done: "d", hint: "do the admin thing", needs: null },
+      { id: "own", competency: "C", scope: "world", status: "outstanding", week: 1, message: "no scene of your own", done: "d", hint: "make a scene", needs: null },
+      { id: "grid", competency: "C", scope: "scene", status: "unavailable", week: 1, message: "grid", done: "d", hint: "calibrate the grid", needs: "own" }
     ];
     const html = buildReportHtml(results as any, {});
     const next = html.slice(html.indexOf("Do this next"), html.indexOf("gnr-competency"));
@@ -372,11 +383,10 @@ describe("report ordering and labels, found by looking at the real dialog", () =
     expect(next).not.toContain("do the admin thing");
   });
 
-  test("an unblocking row yields to week order once its scope reads", () => {
+  test("once the prerequisite is met, week order decides again", () => {
     const results = [
-      { id: "admin", competency: "C", scope: "world", status: "outstanding", week: 1, message: "admin gap", done: "d", hint: "do the admin thing", unblocks: null },
-      { id: "own", competency: "C", scope: "world", status: "outstanding", week: 2, message: "no scene of your own", done: "d", hint: "make a scene", unblocks: "scene" },
-      { id: "grid", competency: "C", scope: "scene", status: "outstanding", week: 2, message: "grid", done: "d", hint: "h", unblocks: null }
+      { id: "admin", competency: "C", scope: "world", status: "outstanding", week: 1, message: "admin gap", done: "d", hint: "do the admin thing", needs: null },
+      { id: "grid", competency: "C", scope: "scene", status: "outstanding", week: 2, message: "grid", done: "d", hint: "calibrate the grid", needs: "own" }
     ];
     const html = buildReportHtml(results as any, {});
     const next = html.slice(html.indexOf("Do this next"), html.indexOf("gnr-competency"));
