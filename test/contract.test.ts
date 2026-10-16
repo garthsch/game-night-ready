@@ -305,3 +305,42 @@ describe("the verdict headline is the name, and it is a claim", () => {
     expect(html).not.toContain("gnr-verdict-ready");
   });
 });
+
+describe("report ordering and labels, found by looking at the real dialog", () => {
+  test("no week number reaches the rendered report", () => {
+    const results = runChecks(checks, {
+      scene: { id: "s", name: "S", grid: { size: 100, type: 1 }, tokenVision: true,
+        environment: { globalLight: { enabled: false } },
+        levels: [], walls: [], lights: [], tokens: [], notes: [] },
+      world: { activeModuleCount: 0, journal: [], players: [] },
+      user: null
+    });
+    const html = buildReportHtml(results, { sceneName: "S" });
+    expect(html).not.toContain("gnr-week");
+    expect(html.toLowerCase()).not.toMatch(/>week \d/);
+    // Still in the data, because the course view needs it.
+    expect(checks.every(r => typeof r.week === "number")).toBe(true);
+  });
+
+  test("groups with outstanding work sort above finished ones", () => {
+    // The live report put a week-1 Vanilla-first row below week-5 rows purely
+    // because its competency appeared later in checks.json.
+    const results = [
+      { id: "a", competency: "Finished", status: "pass", week: 1, message: "m", hint: "h" },
+      { id: "b", competency: "Has work", status: "outstanding", week: 9, message: "m", hint: "h" },
+      { id: "c", competency: "Has work", status: "outstanding", week: 9, message: "m", hint: "h" }
+    ];
+    const html = buildReportHtml(results as any, {});
+    expect(html.indexOf("Has work")).toBeLessThan(html.indexOf("Finished"));
+  });
+
+  test("the verdict is pinned inside a bounded scroll container", () => {
+    // Measured live: unbounded, the dialog rendered 1926px tall at y=-215, so
+    // the verdict was off the top of the screen. Sticky alone cannot fix that;
+    // it needs a scrolling ancestor.
+    const css = readFileSync(join(ROOT, "styles/game-night-ready.css"), "utf8");
+    expect(css).toMatch(/\.gnr-verdict\s*\{[^}]*position: sticky/s);
+    expect(css).toMatch(/\.game-night-ready\s*\{[^}]*max-height/s);
+    expect(css).toMatch(/\.game-night-ready\s*\{[^}]*overflow-y: auto/s);
+  });
+});

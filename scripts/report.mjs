@@ -85,14 +85,17 @@ export function buildReportHtml(results, context = {}) {
       + ` imported adventure, so this reports what you added.</p>`);
   }
 
-  // Outstanding first, within each competency, because that is what the GM came for.
-  for ( const [competency, rows] of byCompetency ) {
-    const ordered = [...rows].sort((a, b) => rank(a.status) - rank(b.status) || a.week - b.week);
+  // Groups with work come first, so a GM never scrolls past finished sections to
+  // find what is left. Within a group, outstanding first.
+  const groups = [...byCompetency].sort((a, b) =>
+    b[1].filter(r => r.status === STATUS.OUTSTANDING).length
+    - a[1].filter(r => r.status === STATUS.OUTSTANDING).length);
+  for ( const [competency, rows] of groups ) {
+    const ordered = [...rows].sort((a, b) => rank(a.status) - rank(b.status));
     parts.push(`<h3 class="gnr-competency">${escapeHtml(competency)}</h3><ul class="gnr-rows">`);
     for ( const row of ordered ) {
       parts.push(`<li class="gnr-row gnr-${row.status}">`);
       parts.push(`<span class="gnr-status">${STATUS_LABEL[row.status]}</span> `);
-      parts.push(`<span class="gnr-week">week ${escapeHtml(row.week)}</span> `);
       parts.push(`<span class="gnr-message">${escapeHtml(row.message)}</span>`);
       if ( row.status === STATUS.OUTSTANDING ) {
         parts.push(`<div class="gnr-hint">${escapeHtml(row.hint)}</div>`);

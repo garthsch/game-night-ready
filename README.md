@@ -114,7 +114,7 @@ the walls have to be built either way.
 bun test
 ```
 
-91 tests, no Foundry required: the evaluator and predicates are pure and run
+94 tests, no Foundry required: the evaluator and predicates are pure and run
 against plain objects.
 
 ## Licence

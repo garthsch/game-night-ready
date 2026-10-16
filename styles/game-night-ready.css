@@ -1,4 +1,11 @@
-.game-night-ready { font-size: var(--font-size-14); line-height: 1.45; }
+/* Without a bound the dialog grows to its content: measured at 1926px tall in a
+   1080-ish window, which pushed the verdict off the top of the screen entirely.
+   Constrain here and scroll inside, so the sticky verdict has a container. */
+.game-night-ready {
+  font-size: var(--font-size-14); line-height: 1.45;
+  max-height: min(70vh, 640px); overflow-y: auto; overscroll-behavior: contain;
+  padding-right: 0.4rem;
+}
 .game-night-ready .gnr-headline { font-size: var(--font-size-16); font-weight: bold; margin: 0 0 0.25rem; }
 .game-night-ready .gnr-subject,
 .game-night-ready .gnr-baseline { margin: 0 0 0.5rem; opacity: 0.85; }
@@ -7,25 +14,32 @@
   border-bottom: 1px solid var(--color-border-light-primary, #7a7971);
 }
 .game-night-ready .gnr-rows { list-style: none; margin: 0; padding: 0; }
-.game-night-ready .gnr-row { padding: 0.35rem 0 0.35rem 0.5rem; border-left: 3px solid transparent; }
 .game-night-ready .gnr-outstanding { border-left-color: #c9741f; }
 .game-night-ready .gnr-pass { border-left-color: #4a7d3f; opacity: 0.7; }
 .game-night-ready .gnr-unavailable,
 .game-night-ready .gnr-error { border-left-color: #8a8a8a; opacity: 0.8; }
 .game-night-ready .gnr-human { border-left-color: #5b6f99; }
-.game-night-ready .gnr-status {
-  display: inline-block; min-width: 7.5em; font-variant: small-caps;
-  letter-spacing: 0.04em; opacity: 0.8;
+.game-night-ready .gnr-row {
+  display: grid; grid-template-columns: 7.5em 1fr; column-gap: 0.6rem;
+  padding: 0.4rem 0 0.4rem 0.5rem; border-left: 3px solid transparent;
 }
-.game-night-ready .gnr-week { opacity: 0.6; margin-right: 0.35rem; }
+.game-night-ready .gnr-status {
+  font-variant: small-caps; letter-spacing: 0.04em; opacity: 0.8;
+}
+.game-night-ready .gnr-message { grid-column: 2; }
 .game-night-ready .gnr-hint,
-.game-night-ready .gnr-detail { margin: 0.2rem 0 0 8em; opacity: 0.85; font-size: var(--font-size-13); }
+.game-night-ready .gnr-detail {
+  grid-column: 2; margin: 0.25rem 0 0; opacity: 0.85; font-size: var(--font-size-13);
+}
 .game-night-ready .gnr-footer {
   margin-top: 1rem; padding-top: 0.5rem; font-style: italic; opacity: 0.8;
   border-top: 1px solid var(--color-border-light-primary, #7a7971);
 }
 .game-night-ready .gnr-verdict {
-  margin: 0 0 0.35rem; font-size: var(--font-size-20); font-weight: bold; letter-spacing: 0.01em;
+  position: sticky; top: 0; z-index: 1;
+  margin: 0 0 0.35rem; padding: 0.4rem 0 0.35rem;
+  font-size: var(--font-size-20); font-weight: bold; letter-spacing: 0.01em;
+  background: var(--color-bg, #1b1b1d);
 }
 .game-night-ready .gnr-verdict-ready { color: #4a7d3f; }
 .game-night-ready .gnr-verdict-not-ready { color: #c9741f; }

@@ -49,6 +49,9 @@ Hooks.once("ready", async () => {
   // Callable from a macro or the console, for anyone who prefers not to hunt for a button.
   game.modules.get(MODULE_ID).api = { run, checks: () => CHECKS };
   console.log(`${MODULE_ID} | ready with ${CHECKS.length} checks`);
+  // Scene controls are built before this await resolves, so the first render
+  // saw zero checks and no count. Rebuild them now that the rows are in.
+  refresh();
 });
 
 async function loadChecks() {
