@@ -75,15 +75,27 @@ export async function run() {
     ui.notifications?.warn("Game Night Ready has no check rows loaded.");
     return null;
   }
-  const scopes = collectScopes();
-  const baseline = baselineIdsFor(scopes.scene);
-  const results = runChecks(CHECKS, scopes, { baseline });
-  await showReport(results, {
-    sceneName: scopes.scene?.name ?? null,
-    worldTitle: game.world?.title ?? null,
-    baselineCount: baseline.size,
-    onFoundryDefaultScene: scopes.onFoundryDefaultScene
-  });
+  // The report is a one-shot render: `refresh` below re-renders the control
+  // button and never an open dialog, so a GM who goes and does what the report
+  // asked comes back to stale state with nothing saying so. "Check again" closes
+  // and re-enters this loop rather than re-rendering in place, which is the point
+  // of putting it here instead of inside `showReport` — scopes are collected
+  // again, so the second pass reads the world as it is now rather than repainting
+  // the first pass's results. Deliberately not an auto-refresh on the watched
+  // hooks: content moving under a GM mid-sentence is its own failure.
+  let results;
+  let choice;
+  do {
+    const scopes = collectScopes();
+    const baseline = baselineIdsFor(scopes.scene);
+    results = runChecks(CHECKS, scopes, { baseline });
+    choice = await showReport(results, {
+      sceneName: scopes.scene?.name ?? null,
+      worldTitle: game.world?.title ?? null,
+      baselineCount: baseline.size,
+      onFoundryDefaultScene: scopes.onFoundryDefaultScene
+    });
+  } while ( choice === "recheck" );
   return results;
 }
 

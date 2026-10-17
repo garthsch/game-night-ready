@@ -30,7 +30,7 @@
     },
     "message": "No player user has a character assigned, so nobody will control a token when they log in.",
     "done": "At least one player user has a character assigned.",
-    "hint": "User Management: assign each player's user to their actor. Without it a player connects and can move nothing.",
+    "hint": "Two places, in this order. On the actor, Configure Ownership and set that player to Owner. Then find them in the Players panel at the bottom left, right-click their name, and choose User Configuration: set Player Character to that actor and press Save Player Configuration. A player who is not logged in is hidden until you click the caret beside the FPS readout, which is where every player sits while you are setting up before a session.",
     "needs": "admin.players.exist"
   },
   {
@@ -229,7 +229,7 @@
     },
     "message": "Global Illumination is on, which lights the whole map evenly. If this is an outdoor daylight scene that is correct; on a dungeon it hides your lighting work.",
     "done": "Global Illumination is off, so the lights you place do the work.",
-    "hint": "Scene Configuration, Lighting: turn Global Illumination off to let your placed lights do the work.",
+    "hint": "Scene Configuration, Visibility tab: turn Global Illumination off to let your placed lights do the work. It is the last section on that tab, below Fog of War.",
     "needs": "canvas.scene.own"
   },
   {
@@ -244,7 +244,7 @@
     },
     "message": "Token Vision is turned off for this scene, so all your wall and lighting work will be invisible to players.",
     "done": "Token Vision is on for this scene.",
-    "hint": "Scene Configuration, Vision tab: enable Token Vision. Leave it off only for a map you intend everyone to see all of at once.",
+    "hint": "Scene Configuration, Visibility tab: enable Token Vision, the first control on that tab. Leave it off only for a map you intend everyone to see all of at once.",
     "needs": "canvas.scene.own"
   },
   {

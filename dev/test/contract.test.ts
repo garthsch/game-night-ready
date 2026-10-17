@@ -13,14 +13,29 @@ const SOURCES = readdirSync(join(ROOT, "scripts"))
 describe("the button is only offered when it can be honoured", () => {
   test("a resolved target gets a tour button, named after the step", () => {
     const buttons = reportButtons({ label: "Wall Controls" });
-    expect(buttons.map((b: any) => b.action)).toEqual(["tour", "close"]);
+    expect(buttons.map((b: any) => b.action)).toEqual(["tour", "recheck", "close"]);
     expect(buttons[0].label).toBe("Show me: Wall Controls");
   });
   test("no target means no tour button at all", () => {
     // Offering it anyway would close the dialog and do nothing, which is the
     // failure this whole guard exists to prevent.
     const buttons = reportButtons(null);
-    expect(buttons.map((b: any) => b.action)).toEqual(["close"]);
+    expect(buttons.map((b: any) => b.action)).toEqual(["recheck", "close"]);
+  });
+  test("Check again is offered whether or not a tour step resolved", () => {
+    // The way back from an instruction must not depend on whether that
+    // instruction happened to have a shipped tour behind it. Seven rows have no
+    // tour; those are exactly the GMs who most need a way to re-check.
+    for ( const target of [null, { label: "Wall Controls" }] ) {
+      expect(reportButtons(target as any).some((b: any) => b.action === "recheck")).toBe(true);
+    }
+  });
+  test("Check again is never the default, so Enter still only closes", () => {
+    // Enter re-running the whole check would be a surprise; Enter closing is not.
+    for ( const target of [null, { label: "Wall Controls" }] ) {
+      const def = reportButtons(target as any).find((b: any) => b.default);
+      expect(def?.action).toBe("close");
+    }
   });
   test("the close button is the default, so Enter never starts a tour", () => {
     expect(reportButtons({ label: "x" }).find((b: any) => b.default)?.action).toBe("close");
@@ -489,5 +504,52 @@ describe("report ordering and labels, found by looking at the real dialog", () =
     expect(css).toMatch(/\.gnr-verdict\s*\{[^}]*position: sticky/s);
     expect(css).toMatch(/\.game-night-ready\s*\{[^}]*max-height/s);
     expect(css).toMatch(/\.game-night-ready\s*\{[^}]*overflow-y: auto/s);
+  });
+});
+
+describe("a hint cannot name a Scene Configuration tab that does not exist", () => {
+  // A hint that names the wrong destination is worse than one that names none:
+  // the GM arrives somewhere plausible, finds nothing to do, and spends their
+  // confidence before the instruction fails. Two rows shipped that way until
+  // 2026-10-17, naming a "Lighting" tab and a "Vision" tab. Both controls are on
+  // Visibility.
+  //
+  // Taken from `SCENE.TABS.SHEET` in Foundry v14.365's own `public/lang/en.json`,
+  // so a release that renames a tab fails this loudly instead of silently
+  // misdirecting. Scoped to hints that mention Scene Configuration, because other
+  // sheets have their own tabs and this guard has nothing to say about them.
+  const SCENE_CONFIG_TABS = ["Basics", "Grid", "Visibility", "Environment", "Miscellaneous", "Levels"];
+  const NAMED_TAB = /([A-Z][A-Za-z]+)\s+tab\b/g;
+  const AFTER_COMMA = /Scene Configuration,\s*([A-Z][A-Za-z]+)/g;
+
+  const sceneConfigHints = (checks as any[]).filter(r => r.hint?.includes("Scene Configuration"));
+
+  test("some row actually names Scene Configuration, so this guard has subjects", () => {
+    expect(sceneConfigHints.length).toBeGreaterThan(0);
+  });
+
+  for ( const row of sceneConfigHints ) {
+    test(`${row.id} names only real tabs`, () => {
+      const named = [
+        ...row.hint.matchAll(NAMED_TAB),
+        ...row.hint.matchAll(AFTER_COMMA)
+      ].map(m => m[1]);
+      const unknown = named.filter(name => !SCENE_CONFIG_TABS.includes(name));
+      expect(unknown).toEqual([]);
+    });
+  }
+
+  test("the guard catches the two wordings that shipped", () => {
+    // A guard that never fails is decoration, so both historical forms are
+    // exercised here: one wrote "Scene Configuration, Lighting:" with no tab
+    // word, the other wrote "Vision tab".
+    const historical = [
+      "Scene Configuration, Lighting: turn Global Illumination off.",
+      "Scene Configuration, Vision tab: enable Token Vision."
+    ];
+    for ( const hint of historical ) {
+      const named = [...hint.matchAll(NAMED_TAB), ...hint.matchAll(AFTER_COMMA)].map(m => m[1]);
+      expect(named.filter(n => !SCENE_CONFIG_TABS.includes(n))).not.toEqual([]);
+    }
   });
 });

@@ -195,6 +195,12 @@ export function reportButtons(target) {
   if ( target ) {
     buttons.push({ action: "tour", label: `Show me: ${target.label}`, icon: "fa-solid fa-person-hiking" });
   }
+  // Offered unconditionally, including when nothing is outstanding. The report
+  // hands out an instruction and then cannot tell you whether you carried it out,
+  // so the way back has to live beside the instruction rather than in a toolbar
+  // the GM has to go and find again. Predictable placement beats hiding it when
+  // the count is zero.
+  buttons.push({ action: "recheck", label: "Check again", icon: "fa-solid fa-arrows-rotate" });
   buttons.push({ action: "close", label: "Close", default: true });
   return buttons;
 }
