@@ -12,7 +12,11 @@
     },
     "message": "This world has no player users yet, so there is nobody to invite and nobody to hand a character to.",
     "done": "This world has player users.",
-    "hint": "User Management: add a user per player at the Player role. Do it well before game night, since each of them needs the link and their password in hand rather than at the table."
+    "hint": "User Management: add a user per player at the Player role. Do it well before game night, since each of them needs the link and their password in hand rather than at the table.",
+    "tour": {
+      "id": "core.sidebar",
+      "step": "settings"
+    }
   },
   {
     "id": "admin.gm.has-character",
@@ -31,7 +35,11 @@
     "message": "No player user has a character assigned, so nobody will control a token when they log in.",
     "done": "At least one player user has a character assigned.",
     "hint": "User Management: assign each player's user to their actor. Without it a player connects and can move nothing.",
-    "needs": "admin.players.exist"
+    "needs": "admin.players.exist",
+    "tour": {
+      "id": "core.sidebar",
+      "step": "settings"
+    }
   },
   {
     "id": "canvas.scene.own",
@@ -50,7 +58,11 @@
     },
     "message": "This world has no scene of your own yet, only the one Foundry ships with a new world.",
     "done": "This world has at least one scene you made.",
-    "hint": "Open the Scenes directory and create a scene, then open it. The scene a new world starts on is Foundry's own splash screen, and none of it is your work."
+    "hint": "Open the Scenes directory and create a scene, then open it. The scene a new world starts on is Foundry's own splash screen, and none of it is your work.",
+    "tour": {
+      "id": "core.sidebar",
+      "step": "scenes"
+    }
   },
   {
     "id": "canvas.background.present",
@@ -112,7 +124,11 @@
     "message": "No wall on this scene is one you placed, so nothing you own blocks movement or sight.",
     "done": "You have placed walls on this scene.",
     "hint": "Use the Walls tool to trace the outside of each room and corridor. Walls are what make lighting and vision mean anything.",
-    "needs": "canvas.scene.own"
+    "needs": "canvas.scene.own",
+    "tour": {
+      "id": "core.canvasControls",
+      "step": "walls"
+    }
   },
   {
     "id": "canvas.walls.doors",
@@ -133,7 +149,11 @@
     "message": "No wall you placed is configured as a door. If your map genuinely has no doors, this is expected.",
     "done": "You have configured a door on this scene.",
     "hint": "Select a wall segment across a doorway and set its Door type. A door you can open at the table is worth more than a wall you have to delete.",
-    "needs": "canvas.scene.own"
+    "needs": "canvas.scene.own",
+    "tour": {
+      "id": "core.canvasControls",
+      "step": "walls"
+    }
   },
   {
     "id": "canvas.walls.sight-blocking",
@@ -154,7 +174,11 @@
     "message": "No wall you placed is set to block sight, so nothing you own hides the map from your players.",
     "done": "A wall you placed is set to block sight.",
     "hint": "A wall's Sight restriction controls what players can see past it. Walls set to None are movement-only barriers, which is right for a railing and wrong for a wall.",
-    "needs": "canvas.scene.own"
+    "needs": "canvas.scene.own",
+    "tour": {
+      "id": "core.canvasControls",
+      "step": "walls"
+    }
   },
   {
     "id": "canvas.lights.placed",
@@ -195,7 +219,11 @@
     "message": "There is no light of your own on this scene: no ambient light you placed and no token you gave one to.",
     "done": "You have put light on this scene, either an ambient light or a token carrying one.",
     "hint": "Place an ambient light, or configure a light on the token carrying a torch. A deliberately dark dungeon still needs one light source for the darkness to read as darkness.",
-    "needs": "canvas.scene.own"
+    "needs": "canvas.scene.own",
+    "tour": {
+      "id": "core.canvasControls",
+      "step": "lighting"
+    }
   },
   {
     "id": "canvas.lighting.not-blanket",
@@ -244,7 +272,11 @@
     "message": "No token on this scene has vision enabled, so no player token will see anything.",
     "done": "At least one token on this scene has vision enabled.",
     "hint": "Open a player token's configuration and enable Vision with a sight range. Without it the token is blind regardless of the scene setting.",
-    "needs": "canvas.scene.own"
+    "needs": "canvas.scene.own",
+    "tour": {
+      "id": "core.canvasControls",
+      "step": "tokens"
+    }
   },
   {
     "id": "automation.tokens.actor-linked",
@@ -264,7 +296,11 @@
     "message": "No token you placed is linked to an actor, so nothing you added has a character sheet behind it.",
     "done": "A token you placed is linked to an actor.",
     "hint": "Drag actors from the Actors directory onto the canvas rather than creating bare tokens. An unlinked token cannot roll, take damage or appear in combat properly.",
-    "needs": "canvas.scene.own"
+    "needs": "canvas.scene.own",
+    "tour": {
+      "id": "core.sidebar",
+      "step": "actorDirectory"
+    }
   },
   {
     "id": "prep.journal.present",
@@ -280,7 +316,11 @@
     },
     "message": "This world has no journal entries of your own.",
     "done": "This world has journal entries of your own.",
-    "hint": "Even one entry per room is enough to run from. Journals are the thing you read at the table, so they are prep rather than decoration."
+    "hint": "Even one entry per room is enough to run from. Journals are the thing you read at the table, so they are prep rather than decoration.",
+    "tour": {
+      "id": "core.sidebar",
+      "step": "journalEntry"
+    }
   },
   {
     "id": "prep.notes.placed",
@@ -300,7 +340,11 @@
     "message": "You have pinned no map notes of your own to this scene, so your prep is not reachable from the map at the table.",
     "done": "You have pinned a map note to this scene.",
     "hint": "Use the Notes tool to pin a journal entry to each keyed location. At the table you click the pin instead of hunting through the journal.",
-    "needs": "canvas.scene.own"
+    "needs": "canvas.scene.own",
+    "tour": {
+      "id": "core.canvasControls",
+      "step": "notes"
+    }
   },
   {
     "id": "vanilla.modules.restrained",
@@ -315,6 +359,10 @@
     },
     "message": "More than five modules are active. Every one of them is a thing that can break in a way you cannot diagnose yet.",
     "done": "Five or fewer modules are active, which is a stack you can still diagnose.",
-    "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick."
+    "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick.",
+    "tour": {
+      "id": "core.sidebar",
+      "step": "settings"
+    }
   }
 ]

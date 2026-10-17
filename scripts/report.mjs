@@ -6,6 +6,18 @@
  */
 
 import { STATUS, summarise } from "./evaluator.mjs";
+import { resolveTourTarget, startTourAt } from "./tours.mjs";
+
+/**
+ * How long to wait for the report's own close event before starting a tour anyway.
+ *
+ * Above `ApplicationV2#close`'s own ceiling: it awaits the closing transition for
+ * up to 1000ms (application.mjs:1016) and only emits "close" after tearing the
+ * element out of the DOM, so a shorter timeout here would pre-empt a close that
+ * was merely animating. This is a safety net for an event that never arrives, and
+ * it should never be the thing that fires.
+ */
+const CLOSE_TIMEOUT_MS = 1500;
 
 /** Competencies the machine cannot assess, stated in the product itself. */
 export const HUMAN_ASSESSED = [
@@ -105,9 +117,16 @@ export function buildReportHtml(results, context = {}) {
 
   const next = nextAction(results);
   if ( next ) {
+    // The hint names a control; it does not say where the control is. Where a
+    // shipped tour covers it, the button below is the answer to "where", and
+    // saying so in the block is what connects the two.
+    const tourLine = context.tourLabel
+      ? `<p class="gnr-next-tour">Press <strong>Show me: ${escapeHtml(context.tourLabel)}</strong>`
+        + ` below and Foundry will open it for you.</p>`
+      : "";
     parts.push(`<div class="gnr-next"><p class="gnr-next-label">Do this next</p>`
       + `<p class="gnr-next-what">${escapeHtml(next.message)}</p>`
-      + `<p class="gnr-next-how">${escapeHtml(next.hint)}</p></div>`);
+      + `<p class="gnr-next-how">${escapeHtml(next.hint)}</p>${tourLine}</div>`);
   }
 
   if ( context.baselineCount ) {
@@ -163,14 +182,61 @@ function rank(status) {
   return { [STATUS.OUTSTANDING]: 0, [STATUS.ERROR]: 1, [STATUS.UNAVAILABLE]: 2, [STATUS.PASS]: 3 }[status] ?? 9;
 }
 
+/**
+ * The dialog's buttons. Separated from opening it for the same reason the HTML is:
+ * whether a button is offered at all is a decision worth testing, and a decision
+ * made inside `showReport` cannot be reached without a live DialogV2.
+ *
+ * @param {{label: string}|null} target  A resolved tour step, or null.
+ * @returns {object[]}
+ */
+export function reportButtons(target) {
+  const buttons = [];
+  if ( target ) {
+    buttons.push({ action: "tour", label: `Show me: ${target.label}`, icon: "fa-solid fa-person-hiking" });
+  }
+  buttons.push({ action: "close", label: "Close", default: true });
+  return buttons;
+}
+
 /** Open the report. Separated from building so the HTML is testable headless. */
 export async function showReport(results, context = {}) {
   const { DialogV2 } = foundry.applications.api;
-  return DialogV2.prompt({
+  const next = nextAction(results);
+  // Resolved before the dialog opens, because a button offering to take you
+  // somewhere has to be able to. `CanvasTour.canStart` is `!!canvas.scene`, so on
+  // a world with no scene of its own the canvas tours decline and no button appears.
+  const target = next?.tour ? resolveTourTarget(next.tour) : null;
+
+  // The dialog's own close event, taken as a promise. `DialogV2.wait` resolves
+  // from `_onSubmit` at dialog.mjs:274 and only calls `close()` at line 277, so
+  // the pressed-button value arrives BEFORE the report has gone. Starting the
+  // tour on it directly would render the step while this dialog is still on
+  // screen, over the control the step is pointing at. The close event is emitted
+  // after `_tearDown` removes the element (application.mjs:1018-1033), so waiting
+  // on it means the report is genuinely out of the way.
+  let reportClosed;
+  const closed = new Promise(resolve => { reportClosed = resolve; });
+
+  const choice = await DialogV2.wait({
     window: { title: "Game Night Ready", icon: "fa-solid fa-clipboard-check" },
     position: { width: 620 },
-    content: buildReportHtml(results, context),
-    ok: { label: "Close" },
+    content: buildReportHtml(results, { ...context, tourLabel: target?.label ?? null }),
+    buttons: reportButtons(target),
+    close: () => reportClosed(),
     rejectClose: false
   });
+
+  if ( choice === "tour" ) {
+    // Raced against a timeout so a close event that never arrives cannot leave
+    // the press doing nothing at all; late is better than never here.
+    await Promise.race([closed, new Promise(resolve => setTimeout(resolve, CLOSE_TIMEOUT_MS))]);
+    // Resolved a second time on purpose. The world can move while the report is
+    // open: close the scene and `canStart` goes false, so the button that was
+    // honest when it rendered is not any more. Pressing it then has to say so,
+    // because a dialog that closes and does nothing reads as a broken module.
+    if ( resolveTourTarget(next.tour) ) await startTourAt(next.tour);
+    else ui.notifications?.warn("Foundry cannot open that tour from here now. The report text still says what to do.");
+  }
+  return choice;
 }

@@ -83,16 +83,28 @@ Adding a check means adding a row:
 ```json
 {
   "id": "canvas.walls.doors",
-  "week": 3,
+  "week": 2,
   "competency": "Canvas and spatial calibration",
+  "topic": "Doors",
   "scope": "scene",
   "predicate": {
     "op": "some",
     "path": "walls",
-    "where": { "op": "gte", "path": "door", "value": 1 }
+    "where": {
+      "op": "gte",
+      "path": "door",
+      "value": 1
+    },
+    "excludeBaseline": true
   },
-  "message": "No wall on this scene is configured as a door.",
-  "hint": "Select a wall segment across a doorway and set its Door type."
+  "message": "No wall you placed is configured as a door. If your map genuinely has no doors, this is expected.",
+  "done": "You have configured a door on this scene.",
+  "hint": "Select a wall segment across a doorway and set its Door type. A door you can open at the table is worth more than a wall you have to delete.",
+  "needs": "canvas.scene.own",
+  "tour": {
+    "id": "core.canvasControls",
+    "step": "walls"
+  }
 }
 ```
 
@@ -110,6 +122,28 @@ particular way. A deliberately dark dungeon passes: one torch at the entrance,
 or a light configured on the token carrying one, is the thing being checked, and
 the walls have to be built either way.
 
+## The button takes you there
+
+Each row may name one of the eight tours Foundry ships, plus the step inside it.
+The report's next step then carries a **Show me** button, and pressing it starts
+that tour on that step. Foundry's own tours do the work: `CanvasTour` activates
+the layer and tool before the step renders, and `SidebarTour` opens the tab.
+
+This module authors no tour steps of its own. Foundry maintains those selectors
+for its own new-user experience, which is the only reason pointing at them is
+cheap to keep; a step written here would bind the module to core markup, which is
+the thing it refuses to do everywhere else.
+
+Most rows point at a step. Four do not: they live in Scene Configuration, and no
+shipped tour opens a dialog, so those carry their text and no button. A row names its step by id rather than by position, so a step inserted
+upstream still resolves and a step renamed upstream drops the button and logs it
+instead of sending you somewhere wrong.
+
+Starting a tour at a step is the one place this module touches state outside its
+own settings: Foundry saves the step a tour lands on, so the button would leave
+your own tour progress moved. It is read before the jump and written back after,
+so Foundry's tours stay where you left them.
+
 ## Development
 
 Everything at the repository root is what ships: `module.json`, `scripts/`,
@@ -121,8 +155,9 @@ of the module.
 bun test
 ```
 
-109 tests in `dev/test/`, no Foundry required: the evaluator and predicates are
-pure and run against plain objects.
+The tests in `dev/test/` need no Foundry: the evaluator and predicates are pure
+and run against plain objects, and the parts that do touch Foundry are tested
+against a shim of it.
 
 ## Licence
 

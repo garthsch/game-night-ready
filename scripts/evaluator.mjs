@@ -10,6 +10,7 @@
  */
 
 import { evaluatePredicate, UNAVAILABLE } from "./predicate.mjs";
+import { validateTourTargets } from "./tours.mjs";
 
 /** The nine fields every row must carry. `message` states what is missing, `done` what was found,
  * and `topic` names the thing itself, for the case where the check could not be read at all. */
@@ -43,6 +44,9 @@ export function validateChecks(rows) {
     }
     if ( row?.predicate && !row.predicate.op ) problems.push(`${label}: predicate has no \`op\``);
   });
+  // `tour` is optional: a row with no shipped tour step to point at keeps its
+  // text and offers no button. A malformed one is a fault worth reporting.
+  problems.push(...validateTourTargets(rows));
   return problems;
 }
 
@@ -81,7 +85,8 @@ function evaluateRow(row, scopes, options) {
     message: row.message,
     done: row.done,
     hint: row.hint,
-    needs: row.needs ?? null
+    needs: row.needs ?? null,
+    tour: row.tour ?? null
   };
   if ( !(row.scope in scopes) ) {
     return { ...base, status: STATUS.ERROR, detail: `unknown scope \`${row.scope}\`` };

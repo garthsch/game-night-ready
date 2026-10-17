@@ -71,3 +71,10 @@
   margin: 0;
   opacity: 0.9;
 }
+
+/* The line that ties the next step to the button in the footer. */
+.game-night-ready .gnr-next-tour {
+  margin: 0.4rem 0 0;
+  font-size: 0.9em;
+  opacity: 0.85;
+}

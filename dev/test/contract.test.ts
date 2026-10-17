@@ -1,14 +1,51 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { runChecks, STATUS } from "../../scripts/evaluator.mjs";
-import { buildReportHtml, HUMAN_ASSESSED } from "../../scripts/report.mjs";
+import { runChecks, STATUS, validateChecks } from "../../scripts/evaluator.mjs";
+import { buildReportHtml, HUMAN_ASSESSED, reportButtons } from "../../scripts/report.mjs";
 import checks from "../../data/checks.json";
 
 const ROOT = join(import.meta.dir, "..", "..");
 const SOURCES = readdirSync(join(ROOT, "scripts"))
   .filter(f => f.endsWith(".mjs"))
   .map(f => ({ file: f, text: readFileSync(join(ROOT, "scripts", f), "utf8") }));
+
+describe("the button is only offered when it can be honoured", () => {
+  test("a resolved target gets a tour button, named after the step", () => {
+    const buttons = reportButtons({ label: "Wall Controls" });
+    expect(buttons.map((b: any) => b.action)).toEqual(["tour", "close"]);
+    expect(buttons[0].label).toBe("Show me: Wall Controls");
+  });
+  test("no target means no tour button at all", () => {
+    // Offering it anyway would close the dialog and do nothing, which is the
+    // failure this whole guard exists to prevent.
+    const buttons = reportButtons(null);
+    expect(buttons.map((b: any) => b.action)).toEqual(["close"]);
+  });
+  test("the close button is the default, so Enter never starts a tour", () => {
+    expect(reportButtons({ label: "x" }).find((b: any) => b.default)?.action).toBe("close");
+  });
+});
+
+describe("the README cannot drift from the schema", () => {
+  // The README ships in the release zip, so an example row that would be
+  // rejected by validateChecks is a public document teaching a wrong shape.
+  test("the example row in README.md is a valid check row", () => {
+    const readme = readFileSync(join(ROOT, "README.md"), "utf8");
+    const blocks = [...readme.matchAll(/```json\n([\s\S]*?)```/g)].map(m => m[1]);
+    expect(blocks.length).toBeGreaterThan(0);
+    for ( const block of blocks ) {
+      expect(validateChecks([JSON.parse(block)])).toEqual([]);
+    }
+  });
+  test("the example row is one the module actually ships", () => {
+    const readme = readFileSync(join(ROOT, "README.md"), "utf8");
+    const example = JSON.parse(readme.match(/```json\n([\s\S]*?)```/)![1]);
+    const shipped = (checks as any[]).find(r => r.id === example.id);
+    expect(shipped).toBeDefined();
+    expect(example).toEqual(shipped);
+  });
+});
 
 describe("no check reads a DOM selector", () => {
   // Selector and DOM-traversal APIs. A check must resolve through the document
@@ -172,6 +209,30 @@ describe("the module cannot gate or mutate anything", () => {
         .map(m => `${s.file}: ${m[1]}.${m[2]}()`));
     expect(writes).toEqual([]);
     expect(entry).toContain("game.settings.set(MODULE_ID, SETTINGS.BASELINE");
+  });
+
+  test("every settings write is one of the two the module is allowed", () => {
+    // The first version of this test asserted only that the ALLOWED write was
+    // present, so a new write anywhere was invisible to it. Enumerate instead.
+    const ALLOWED = [
+      "game.settings.set(MODULE_ID, SETTINGS.BASELINE",   // the module's own baseline
+      'game.settings.set("core", "tourProgress"'          // putting the GM's own back, below
+    ];
+    const found = SOURCES.flatMap(s =>
+      [...s.text.matchAll(/game\.settings\.set\([^)]*/g)].map(m => ({ file: s.file, call: m[0] })));
+    expect(found.length).toBeGreaterThan(0);
+    const unexpected = found.filter(f => !ALLOWED.some(a => f.call.startsWith(a)));
+    expect(unexpected.map(f => `${f.file}: ${f.call}`)).toEqual([]);
+  });
+
+  test("the core tour-progress write only ever restores what was read first", () => {
+    // It is a restore, not a write of our own value. If the set is ever reached
+    // without the paired read, this module has started editing core state.
+    const tours = SOURCES.find(s => s.file === "tours.mjs")!.text;
+    expect(tours).toContain('game.settings?.get("core", "tourProgress")');
+    expect(tours).toContain("structuredClone");
+    const setIndex = tours.indexOf('game.settings.set("core", "tourProgress"');
+    expect(tours.slice(setIndex - 400, setIndex)).toContain("prior");
   });
 
   test("every watched-document listener is a plain read-only hook", () => {
@@ -391,6 +452,26 @@ describe("report ordering and labels, found by looking at the real dialog", () =
     const html = buildReportHtml(results as any, {});
     const next = html.slice(html.indexOf("Do this next"), html.indexOf("gnr-competency"));
     expect(next).toContain("do the admin thing");
+  });
+
+  test("the next step names the button when a shipped tour covers it", () => {
+    const results = [
+      { id: "a", week: 2, competency: "Canvas", topic: "Walls", status: STATUS.OUTSTANDING,
+        message: "no walls", done: "walls", hint: "use the Walls tool",
+        tour: { id: "core.canvasControls", step: "walls" } }
+    ];
+    const html = buildReportHtml(results, { tourLabel: "Wall Controls" });
+    expect(html).toContain("Show me: Wall Controls");
+  });
+
+  test("with no tour to offer, the next step promises no button", () => {
+    const results = [
+      { id: "a", week: 2, competency: "Canvas", topic: "Grid", status: STATUS.OUTSTANDING,
+        message: "grid is default", done: "grid set", hint: "use the grid tool" }
+    ];
+    const html = buildReportHtml(results, {});
+    expect(html).not.toContain("Show me");
+    expect(html).toContain("gnr-next-how");
   });
 
   test("a clean run has no next step to name", () => {
