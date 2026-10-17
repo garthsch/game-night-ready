@@ -87,19 +87,50 @@ describe("the shipped rows", () => {
       expect(SHIPPED_TOURS).toContain((row as any).tour.id);
     }
   });
-  test("the rows with no tour are the four that live in Scene Configuration", () => {
-    // Pinned deliberately, and the claim is the narrow one: no shipped step
-    // HIGHLIGHTS Scene Configuration, where all four of these are set. It is not
-    // that no step can reach them. `core.sidebar/scenes` reaches the Scenes
-    // directory, which is where you open a scene's configuration from, and that
-    // is already the standard accepted for `canvas.scene.own`. Pointing these
-    // four there is a product decision, deliberately not taken here.
+  // The step order of each shipped tour we point into, copied from
+  // `public/tours/*.json` in the Foundry v14.365 install. Pinned here because the
+  // suite must run without a Foundry install present. Re-check on a core upgrade.
+  const SHIPPED_STEPS: Record<string, string[]> = {
+    "core.sidebar": ["sidebar", "chatLog", "combatTracker", "scenes", "actorDirectory", "actionButtons",
+      "itemDirectory", "journalEntry", "rollableTables", "cardStacks", "playlists", "compendiumPacks", "settings"],
+    "core.canvasControls": ["overview", "tokens", "tile", "drawings", "walls", "lighting", "sounds",
+      "notes", "furtherReading"]
+  };
+
+  test("every target names a step that tour actually has", () => {
+    for ( const row of checks.filter((r: any) => r.tour) ) {
+      const steps = SHIPPED_STEPS[(row as any).tour.id];
+      expect(steps).toBeDefined();
+      expect(steps).toContain((row as any).tour.step);
+    }
+  });
+
+  test("no row points at the last step of a tour", () => {
+    // Found by pressing it in a real client: landing on the final step renders the
+    // tour's Next control as a finish-check, so one click completes a tour the GM
+    // never walked and Foundry then offers its `suggestedNextTours` prompt. The
+    // three week-1 rows pointed at core.sidebar/settings, step 13 of 13.
+    for ( const row of checks.filter((r: any) => r.tour) ) {
+      const steps = SHIPPED_STEPS[(row as any).tour.id];
+      expect(steps[steps.length - 1]).not.toBe((row as any).tour.step);
+    }
+  });
+
+  test("the rows with no tour are the seven no shipped step suits", () => {
+    // Two different reasons, both narrow. Four are set in Scene Configuration and
+    // no shipped step HIGHLIGHTS that dialog; `core.sidebar/scenes` does reach the
+    // Scenes directory it is opened from, so pointing them there stays a product
+    // decision rather than an impossibility. The other three want the sidebar's
+    // Settings tab, whose only shipped step is the last step of its tour.
     const uncovered = checks.filter((r: any) => !r.tour).map((r: any) => r.id);
     expect(uncovered.sort()).toEqual([
+      "admin.gm.has-character",
+      "admin.players.exist",
       "canvas.background.present",
       "canvas.grid.calibrated",
       "canvas.lighting.not-blanket",
-      "canvas.vision.scene-enabled"
+      "canvas.vision.scene-enabled",
+      "vanilla.modules.restrained"
     ]);
   });
 });

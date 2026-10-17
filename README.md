@@ -134,8 +134,13 @@ for its own new-user experience, which is the only reason pointing at them is
 cheap to keep; a step written here would bind the module to core markup, which is
 the thing it refuses to do everywhere else.
 
-Most rows point at a step. Four do not: they live in Scene Configuration, and no
-shipped tour opens a dialog, so those carry their text and no button. A row names its step by id rather than by position, so a step inserted
+Nine of the sixteen rows point at a step. The other seven carry their text and no
+button, for two reasons. Four are set in Scene Configuration and no shipped step
+highlights that dialog. Three want the sidebar's Settings tab, whose only shipped
+step is the last step of its tour, and landing there renders the tour's Next
+control as a finish-check: one click would complete a tour you never walked and
+Foundry would then offer you the next one. A step is only worth pointing at if it
+leaves the tour where it found it. A row names its step by id rather than by position, so a step inserted
 upstream still resolves and a step renamed upstream drops the button and logs it
 instead of sending you somewhere wrong.
 

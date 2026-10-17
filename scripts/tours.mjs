@@ -118,9 +118,10 @@ function stepLabel(step, stepId) {
 /**
  * Start the tour on the step a row points at.
  *
- * `Tour#progress` throws when another tour is already running, which is a thing a
- * GM can cause by leaving the welcome tour open, so it is caught and reported
- * rather than left to surface as an uncaught error.
+ * `Tour#progress` throws for several unrelated reasons, none of them this module's
+ * fault and all of them reachable from a GM's own Foundry, so every one is caught
+ * and reported rather than left to surface as an uncaught error. Which one fired is
+ * not asserted to the GM; see the catch below.
  *
  * Returns what it started, or null. A boolean would read better here and is not
  * available: a literal false returned from a Foundry hook cancels it, so the
@@ -134,10 +135,12 @@ export async function startTourAt(target) {
   if ( !resolved ) return null;
   // `Tour#progress` persists the index it lands on (`#saveProgress`, which writes
   // the client-scope `core.tourProgress`). Jumping a GM to a step is not the same
-  // as the GM having walked there, and in one shipped case the difference bites:
-  // `core.sidebar` is resumable and its `settings` step is its last, so a jump
-  // would leave Foundry's own Sidebar tour resuming on step 13 of 13 for a GM who
-  // saw none of the first twelve. So the saved progress is put back afterwards.
+  // as the GM having walked there, so the saved progress is put back afterwards and
+  // this module never moves where a core tour thinks the GM is.
+  //
+  // No row points at a last step any more, which was the sharpest version of this:
+  // it left a resumable tour resuming on its final step. That is now a rule with a
+  // test behind it, and this restore is the general case it was the worst example of.
   //
   // Residual, stated rather than hidden: the tour's in-memory index stays where we
   // jumped for the rest of the session, so starting that same tour again before a

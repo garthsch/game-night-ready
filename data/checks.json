@@ -12,11 +12,7 @@
     },
     "message": "This world has no player users yet, so there is nobody to invite and nobody to hand a character to.",
     "done": "This world has player users.",
-    "hint": "User Management: add a user per player at the Player role. Do it well before game night, since each of them needs the link and their password in hand rather than at the table.",
-    "tour": {
-      "id": "core.sidebar",
-      "step": "settings"
-    }
+    "hint": "User Management: add a user per player at the Player role. Do it well before game night, since each of them needs the link and their password in hand rather than at the table."
   },
   {
     "id": "admin.gm.has-character",
@@ -35,11 +31,7 @@
     "message": "No player user has a character assigned, so nobody will control a token when they log in.",
     "done": "At least one player user has a character assigned.",
     "hint": "User Management: assign each player's user to their actor. Without it a player connects and can move nothing.",
-    "needs": "admin.players.exist",
-    "tour": {
-      "id": "core.sidebar",
-      "step": "settings"
-    }
+    "needs": "admin.players.exist"
   },
   {
     "id": "canvas.scene.own",
@@ -359,10 +351,6 @@
     },
     "message": "More than five modules are active. Every one of them is a thing that can break in a way you cannot diagnose yet.",
     "done": "Five or fewer modules are active, which is a stack you can still diagnose.",
-    "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick.",
-    "tour": {
-      "id": "core.sidebar",
-      "step": "settings"
-    }
+    "hint": "Disable what you are not actively using. If something misbehaves, the first diagnostic step is turning modules off until it stops, and a short list makes that quick."
   }
 ]
