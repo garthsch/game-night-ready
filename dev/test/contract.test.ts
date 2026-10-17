@@ -50,7 +50,15 @@ describe("the README cannot drift from the schema", () => {
     const blocks = [...readme.matchAll(/```json\n([\s\S]*?)```/g)].map(m => m[1]);
     expect(blocks.length).toBeGreaterThan(0);
     for ( const block of blocks ) {
-      expect(validateChecks([JSON.parse(block)])).toEqual([]);
+      // Validated inside the shipped set, not alone. A row names a prerequisite by
+      // id, so a one-row set cannot answer whether that id exists, and asking it to
+      // reports a fault about the fixture rather than about the README.
+      const example = JSON.parse(block);
+      const matched = (checks as any[]).some(row => row.id === example.id);
+      const set = matched
+        ? (checks as any[]).map(row => (row.id === example.id ? example : row))
+        : [...(checks as any[]), example];
+      expect(validateChecks(set)).toEqual([]);
     }
   });
   test("the example row is one the module actually ships", () => {

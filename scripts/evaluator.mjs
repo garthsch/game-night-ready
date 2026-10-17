@@ -25,6 +25,11 @@ export const STATUS = {
 
 /**
  * Validate a row set. Returns an array of problem strings; empty means valid.
+ *
+ * Takes the whole set, not a sample of it. Prerequisites are named by id, so
+ * whether a named row exists is only answerable about a complete set: run this
+ * over a subset and a row whose prerequisite was left out of the subset is
+ * reported as naming a row that does not exist.
  */
 export function validateChecks(rows) {
   const problems = [];
@@ -47,6 +52,62 @@ export function validateChecks(rows) {
   // `tour` is optional: a row with no shipped tour step to point at keeps its
   // text and offers no button. A malformed one is a fault worth reporting.
   problems.push(...validateTourTargets(rows));
+  problems.push(...validatePrerequisites(rows));
+  return problems;
+}
+
+/**
+ * Problems in the `needs` graph: a prerequisite that names no row, and a chain of
+ * prerequisites that never ends.
+ *
+ * Why a cycle has to be a validation fault rather than a run-time curiosity. The
+ * run holds a row back when its prerequisite is outstanding, which is right, and
+ * in a cycle every row in the loop is held back by another one in the loop. The
+ * report then says it could not read any of them, offers no next step, and there
+ * is no state of the world a GM could reach that clears it. Week order does not
+ * prevent it either, since rows inside one week may name each other.
+ */
+function validatePrerequisites(rows) {
+  const problems = [];
+  const needs = new Map();
+  for ( const row of rows ?? [] ) {
+    if ( row?.id && ("needs" in row) && (row.needs !== null) && (row.needs !== undefined) ) {
+      needs.set(row.id, row.needs);
+    }
+  }
+  const known = new Set((rows ?? []).map(row => row?.id).filter(Boolean));
+  const reported = new Set();
+
+  for ( const [id, prerequisite] of needs ) {
+    if ( id === prerequisite ) {
+      problems.push(`row \`${id}\`: \`needs\` names the row itself`);
+      reported.add(id);
+      continue;
+    }
+    if ( !known.has(prerequisite) ) {
+      problems.push(`row \`${id}\`: \`needs\` names \`${prerequisite}\`, which is not a row in this set`);
+    }
+  }
+
+  // One report per loop, not one per row in it: a three-row cycle is one fault to
+  // fix, and naming it three times reads as three.
+  for ( const start of needs.keys() ) {
+    const walk = [];
+    const seen = new Set();
+    let at = start;
+    while ( at && needs.has(at) && !seen.has(at) ) {
+      seen.add(at);
+      walk.push(at);
+      at = needs.get(at);
+    }
+    if ( !at || !seen.has(at) ) continue;
+    const loop = walk.slice(walk.indexOf(at));
+    if ( loop.length < 2 ) continue;
+    const signature = [...loop].sort().join(">");
+    if ( reported.has(signature) ) continue;
+    reported.add(signature);
+    problems.push(`rows \`${loop.join("` -> `")}\` form a prerequisite loop, so none of them can ever be reached`);
+  }
   return problems;
 }
 

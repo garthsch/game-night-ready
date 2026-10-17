@@ -1,0 +1,9 @@
+{
+  "name": "game-night-ready-dev",
+  "private": true,
+  "description": "Dev-only test dependencies. Not shipped: the module itself has no runtime dependencies.",
+  "devDependencies": {
+    "fast-check": "4.10.2",
+    "fflate": "^0.8.3"
+  }
+}
