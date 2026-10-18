@@ -286,7 +286,7 @@ describe("the leak tripwire covers the shapes that would plausibly occur", () =>
     "\\\\wsl$\\Ubuntu\\home\\someone\\x",
     "/root/secrets",
     "someone@example.com",
-    "/Users/Garth2/x",
+    "/Users/someone2/x",
     "C:\\Users\\someone\\x",
     "$HOME/.config"
   ];
