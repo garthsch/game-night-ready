@@ -25,6 +25,8 @@
  *   bun dev/release.ts                 build dist/ and gate it
  *   bun dev/release.ts verify <path>   gate an archive already built or published
  *   bun dev/release.ts verify <url>    the same, fetched over the network
+ *   bun dev/release.ts pair <url>      gate the manifest-to-archive pairing at a
+ *                                      manifest URL, which is what Foundry resolves
  *   bun dev/release.ts --publish       build, gate, then cut the GitHub release
  *
  * Exit codes: 0 every gate passed, 1 a gate failed, 2 the run could not proceed.
@@ -362,6 +364,41 @@ export function gate(files: Archive, manifest: any, strictVersion = true): Gate[
   return gates;
 }
 
+/**
+ * The pairing Foundry actually resolves. Installing from a manifest URL reads that
+ * manifest's own `download` field and fetches the archive it names, so the install
+ * is a claim about two artifacts. Every gate above judges one archive and therefore
+ * cannot see a manifest and a zip that disagree, which is the gap the second look
+ * named as F14.
+ *
+ * What is deliberately not a defect: every release's `download` points at
+ * `releases/latest/download/module.zip`, standard Foundry convention, so a pinned
+ * older manifest fetches the newest archive by design. This gate is therefore a
+ * claim about the latest release. Running `pair` against an older tag's manifest is
+ * expected to report a disagreement, and that disagreement is the convention rather
+ * than a fault in that release.
+ */
+export function pairingGate(served: any, inner: any): Gate {
+  const faults: string[] = [];
+  if ( !served?.download ) faults.push("the served manifest declares no download URL");
+  if ( !served?.version ) faults.push("the served manifest declares no version");
+  if ( !inner ) faults.push("the archive the served manifest names has no readable module.json");
+  else {
+    if ( !inner.version ) faults.push("the archive's module.json declares no version");
+    if ( served?.version && inner.version && (served.version !== inner.version) ) {
+      faults.push(`the served manifest declares ${served.version} but the archive it names declares ${inner.version}`);
+    }
+    if ( served?.id && inner.id && (served.id !== inner.id) ) {
+      faults.push(`the served manifest is ${served.id} but the archive it names is ${inner.id}`);
+    }
+  }
+  return {
+    id: "G10",
+    claim: "the served manifest and the archive its download field names agree on id and version",
+    faults
+  };
+}
+
 function report(gates: Gate[], label: string): boolean {
   const failed = gates.filter(g => g.faults.length);
   console.log(`\n${label}`);
@@ -396,6 +433,29 @@ async function main() {
     const files = await loadArchive(source);
     console.log(`${Object.keys(files).length} file(s) in ${source}`);
     process.exit(report(gate(files, manifest, false), `Gates against ${source}`) ? 0 : 1);
+  }
+
+  if ( args[0] === "pair" ) {
+    const url = args[1];
+    if ( !url ) {
+      console.error("pair needs the URL of a manifest");
+      process.exit(2);
+    }
+    const response = await fetch(url, { redirect: "follow" });
+    if ( !response.ok ) throw new Error(`${url} returned ${response.status}`);
+    const served = JSON.parse(await response.text());
+    if ( !served.download ) {
+      process.exit(report([pairingGate(served, null)], `Gates against ${url}`) ? 0 : 1);
+    }
+    const files = await loadArchive(served.download);
+    let inner: any = null;
+    if ( files["module.json"] ) {
+      try { inner = JSON.parse(text(files["module.json"])); }
+      catch { inner = null; }
+    }
+    console.log(`${Object.keys(files).length} file(s) in ${served.download}`);
+    const gates = [...gate(files, manifest, false), pairingGate(served, inner)];
+    process.exit(report(gates, `Gates against ${url} paired with ${served.download}`) ? 0 : 1);
   }
 
   const { paths, missing } = shipList(manifest);

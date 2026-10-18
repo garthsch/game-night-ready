@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildArchive, gate, shipList, type Archive } from "../release.ts";
+import { buildArchive, gate, pairingGate, shipList, type Archive } from "../release.ts";
 import manifest from "../../module.json";
 
 /**
@@ -299,5 +299,46 @@ describe("the leak tripwire covers the shapes that would plausibly occur", () =>
   test("the module as it stands trips none of them", () => {
     const { paths } = shipList(manifest);
     expect(faultsOf(buildArchive(paths), "G6")).toEqual([]);
+  });
+});
+
+describe("G10, the manifest-to-archive pairing Foundry resolves", () => {
+  const served = (over: Record<string, unknown> = {}) =>
+    ({ id: manifest.id, version: "0.3.0", download: "https://example.invalid/module.zip", ...over });
+  const inner = (over: Record<string, unknown> = {}) =>
+    ({ id: manifest.id, version: "0.3.0", ...over });
+
+  test("a manifest and the archive it names agreeing on id and version passes", () => {
+    expect(pairingGate(served(), inner()).faults).toEqual([]);
+  });
+
+  // The F14 class: the manifest a pinned tag serves resolves to the newest zip,
+  // because every release's download points at releases/latest. Nine gates over
+  // the archive alone cannot see it, since the archive is internally sound.
+  test("a served manifest pointing at an archive of another version is reported", () => {
+    const faults = pairingGate(served({ version: "0.2.0" }), inner({ version: "0.3.0" })).faults;
+    expect(faults.length).toBeGreaterThan(0);
+    expect(faults.join(" ")).toContain("0.2.0");
+    expect(faults.join(" ")).toContain("0.3.0");
+  });
+
+  test("a served manifest naming another module's archive is reported", () => {
+    expect(pairingGate(served(), inner({ id: "some-other-module" })).faults.length).toBeGreaterThan(0);
+  });
+
+  test("a served manifest with no download URL is reported", () => {
+    expect(pairingGate(served({ download: undefined }), inner()).faults.join(" ")).toContain("no download URL");
+  });
+
+  test("an archive with no readable manifest is reported", () => {
+    expect(pairingGate(served(), null).faults.join(" ")).toContain("no readable module.json");
+  });
+
+  test("a served manifest with no version is reported", () => {
+    expect(pairingGate(served({ version: undefined }), inner()).faults.join(" ")).toContain("no version");
+  });
+
+  test("an archive manifest with no version is reported", () => {
+    expect(pairingGate(served(), inner({ version: undefined })).faults.join(" ")).toContain("declares no version");
   });
 });
