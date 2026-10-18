@@ -30,7 +30,7 @@
     },
     "message": "No player user has a character assigned, so nobody will control a token when they log in.",
     "done": "At least one player user has a character assigned.",
-    "hint": "Two places, in this order. On the actor, Configure Ownership and set that player to Owner. Then find them in the Players panel at the bottom left, right-click their name, and choose User Configuration: set Player Character to that actor and press Save Player Configuration. A player who is not logged in is hidden until you click the caret beside the FPS readout, which is where every player sits while you are setting up before a session.",
+    "hint": "Two places, in this order. On the actor, Configure Ownership and set that player to Owner, which is what puts the actor within reach of the next step. Then find them in the Players panel at the bottom left, right-click their name, and choose User Configuration: the character dropdown sits beside the avatar and carries no label of its own, with the actor listed under an Owner group. Choose it and press Save Player Configuration. A player who is not logged in is hidden until you click the caret beside the FPS readout, which is where every player sits while you are setting up before a session.",
     "needs": "admin.players.exist"
   },
   {
