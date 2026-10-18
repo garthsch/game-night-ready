@@ -43,6 +43,14 @@ export function validateChecks(rows) {
         || ((typeof value === "string") && !value.trim());
       if ( missing ) problems.push(`${label}: missing required field \`${field}\``);
     }
+    // Typed outside the truthiness guard below, which is what `0` and `false` slip
+    // through: both are present, neither is blank, and a falsy id drops the row out
+    // of the prerequisite graph entirely. A missing id is already reported above, so
+    // this speaks only about one that is there and is the wrong kind of thing.
+    const id = row?.id;
+    if ( (id !== undefined) && (id !== null) && (typeof id !== "string") ) {
+      problems.push(`${label}: \`id\` must be a string`);
+    }
     if ( row?.id ) {
       if ( seen.has(row.id) ) problems.push(`${label}: duplicate id`);
       seen.add(row.id);
@@ -69,45 +77,58 @@ export function validateChecks(rows) {
  */
 function validatePrerequisites(rows) {
   const problems = [];
-  const needs = new Map();
-  for ( const row of rows ?? [] ) {
-    if ( row?.id && ("needs" in row) && (row.needs !== null) && (row.needs !== undefined) ) {
-      needs.set(row.id, row.needs);
-    }
-  }
-  const known = new Set((rows ?? []).map(row => row?.id).filter(Boolean));
-  const reported = new Set();
+  const known = new Set((rows ?? []).map(row => row?.id).filter(id => typeof id === "string"));
 
-  for ( const [id, prerequisite] of needs ) {
-    if ( id === prerequisite ) {
-      problems.push(`row \`${id}\`: \`needs\` names the row itself`);
-      reported.add(id);
+  // Edges accumulate per id rather than overwrite. Keyed by id with one value, a
+  // second row sharing an id replaced the first row's edge, and a loop running
+  // through it was never named: validation reported only the duplicate id while the
+  // run stranded every row in the loop.
+  const edges = new Map();
+  for ( const row of rows ?? [] ) {
+    if ( (typeof row?.id !== "string") || !("needs" in row) ) continue;
+    const prerequisite = row.needs;
+    if ( (prerequisite === null) || (prerequisite === undefined) ) continue;
+    if ( typeof prerequisite !== "string" ) {
+      problems.push(`row \`${row.id}\`: \`needs\` must be a row id`);
       continue;
     }
-    if ( !known.has(prerequisite) ) {
-      problems.push(`row \`${id}\`: \`needs\` names \`${prerequisite}\`, which is not a row in this set`);
+    if ( !edges.has(row.id) ) edges.set(row.id, new Set());
+    edges.get(row.id).add(prerequisite);
+  }
+
+  for ( const [id, prerequisites] of edges ) {
+    for ( const prerequisite of prerequisites ) {
+      if ( id === prerequisite ) problems.push(`row \`${id}\`: \`needs\` names the row itself`);
+      else if ( !known.has(prerequisite) ) {
+        problems.push(`row \`${id}\`: \`needs\` names \`${prerequisite}\`, which is not a row in this set`);
+      }
     }
   }
 
-  // One report per loop, not one per row in it: a three-row cycle is one fault to
-  // fix, and naming it three times reads as three.
-  for ( const start of needs.keys() ) {
-    const walk = [];
-    const seen = new Set();
-    let at = start;
-    while ( at && needs.has(at) && !seen.has(at) ) {
-      seen.add(at);
-      walk.push(at);
-      at = needs.get(at);
+  // One report per loop, not one per row in it. The signature joins on a character
+  // no row id can contain: joined on `>`, a row id containing `>` collided with a
+  // signature and suppressed a real loop.
+  // The path is carried by value rather than pushed and popped from a shared set,
+  // so this walk calls no removal method on anything. The write-boundary guard in
+  // the contract tests scans the source text for document-mutating calls, comments
+  // included, and teaching it to ignore a name here would weaken a safety check to
+  // fit this code.
+  const reportedLoops = new Set();
+  const walk = (node, path) => {
+    const seenAt = path.indexOf(node);
+    if ( seenAt >= 0 ) {
+      const loop = path.slice(seenAt);
+      if ( loop.length < 2 ) return;
+      const signature = [...loop].sort().join("\u0000");
+      if ( reportedLoops.has(signature) ) return;
+      reportedLoops.add(signature);
+      problems.push(`rows \`${loop.join("` -> `")}\` form a prerequisite loop, so none of them can ever be reached`);
+      return;
     }
-    if ( !at || !seen.has(at) ) continue;
-    const loop = walk.slice(walk.indexOf(at));
-    if ( loop.length < 2 ) continue;
-    const signature = [...loop].sort().join(">");
-    if ( reported.has(signature) ) continue;
-    reported.add(signature);
-    problems.push(`rows \`${loop.join("` -> `")}\` form a prerequisite loop, so none of them can ever be reached`);
-  }
+    if ( !edges.has(node) ) return;
+    for ( const next of edges.get(node) ) walk(next, [...path, node]);
+  };
+  for ( const id of edges.keys() ) walk(id, []);
   return problems;
 }
 
@@ -149,7 +170,11 @@ function evaluateRow(row, scopes, options) {
     needs: row.needs ?? null,
     tour: row.tour ?? null
   };
-  if ( !(row.scope in scopes) ) {
+  // `in` walks the prototype chain, so a row scoped `constructor`, `toString` or
+  // `__proto__` resolved to a function off Object.prototype, every path on it
+  // missed, and the row reported as a real gap in a GM's report instead of as a
+  // broken check. An own-property check is the whole fix.
+  if ( !Object.prototype.hasOwnProperty.call(scopes, row.scope) ) {
     return { ...base, status: STATUS.ERROR, detail: `unknown scope \`${row.scope}\`` };
   }
   const context = scopes[row.scope];

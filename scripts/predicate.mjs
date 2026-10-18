@@ -42,6 +42,11 @@ function readSegment(value, segment) {
  */
 export function toMembers(value) {
   if ( (value === null) || (value === undefined) ) return UNAVAILABLE;
+  // A string is iterable, so without this a collection operator on a text field
+  // counted characters: `count_gte 1` on a scene named "Keep" passed, and an empty
+  // name reported a gap. Both are findings about nothing, in a report whose whole
+  // claim rests on telling a gap apart from something it could not read.
+  if ( typeof value === "string" ) return UNAVAILABLE;
   if ( Array.isArray(value) ) return value;
   if ( Array.isArray(value.contents) ) return value.contents;
   if ( typeof value.values === "function" ) return Array.from(value.values());

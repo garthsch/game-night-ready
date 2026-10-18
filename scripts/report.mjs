@@ -141,8 +141,12 @@ export function buildReportHtml(results, context = {}) {
     const ordered = [...rows].sort((a, b) => rank(a.status) - rank(b.status));
     parts.push(`<h3 class="gnr-competency">${escapeHtml(competency)}</h3><ul class="gnr-rows">`);
     for ( const row of ordered ) {
-      parts.push(`<li class="gnr-row gnr-${row.status}">`);
-      parts.push(`<span class="gnr-status">${STATUS_LABEL[row.status]}</span> `);
+      // Escaped like every other interpolation, though `evaluateRow` only ever
+      // assigns a STATUS constant here. These two were the only unescaped values in
+      // the document, and a property claiming nothing in a world can write markup
+      // could not reach them, so the claim rested on a caller's discipline.
+      parts.push(`<li class="gnr-row gnr-${escapeHtml(row.status)}">`);
+      parts.push(`<span class="gnr-status">${escapeHtml(STATUS_LABEL[row.status] ?? row.status)}</span> `);
       // Each status gets a sentence it can support. A passing row states what was
       // found; a row that could not be read names its subject and nothing more,
       // since printing the failure sentence there asserts a finding never made.

@@ -59,7 +59,11 @@ const rowSet = fc.uniqueArray(ID, { minLength: 1, maxLength: 8 }).chain(ids => f
   week: fc.integer({ min: 1, max: 12 }),
   competency: fc.constantFrom(...COMPETENCIES),
   topic: fc.constant(`TOPIC-${id}`),
-  scope: fc.constantFrom("scene", "world", "user", "no_such_scope"),
+  // `constructor`, `toString` and `__proto__` are here because pinning this to
+  // four safe names is what hid F7: `row.scope in scopes` walked the prototype
+  // chain, so each of them resolved to something and the row reported as a real
+  // gap instead of a broken check.
+  scope: fc.constantFrom("scene", "world", "user", "no_such_scope", "constructor", "toString", "__proto__"),
   predicate: rowPredicate,
   message: fc.constant(`MSG-${id}`),
   done: fc.constant(`DONE-${id}`),
@@ -122,6 +126,29 @@ describe("a run reports on exactly the rows it was given", () => {
         expect(result.done).toBe(`DONE-${result.id}`);
         expect(result.hint).toBe(`HINT-${result.id}`);
         expect(result.topic).toBe(`TOPIC-${result.id}`);
+      }
+    }), RUNS);
+  });
+});
+
+describe("a scope the evaluator does not serve is an error, never a gap", () => {
+  const INHERITED = ["constructor", "toString", "__proto__", "valueOf", "hasOwnProperty"];
+
+  test.each(INHERITED)("a row scoped %s reports as broken, not outstanding", name => {
+    const row = {
+      id: "x", week: 1, competency: "c", topic: "TOPIC(x)", scope: name,
+      predicate: { op: "truthy", path: "lit" }, message: "MSG(x)", done: "DONE(x)", hint: "HINT(x)"
+    };
+    const [result] = runChecks([row], { scene: { lit: true }, world: null, user: null });
+    expect(result.status).toBe(STATUS.ERROR);
+    expect(result.detail).toContain("unknown scope");
+  });
+
+  test("over every generated row set, a row reports a gap only from a scope it was given", () => {
+    fc.assert(fc.property(rowSet, scopes, (rows, scopeMap) => {
+      for ( const result of runChecks(rows, scopeMap) ) {
+        if ( result.status !== STATUS.OUTSTANDING ) continue;
+        expect(Object.prototype.hasOwnProperty.call(scopeMap, result.scope)).toBe(true);
       }
     }), RUNS);
   });
@@ -281,8 +308,10 @@ describe("nothing a world contains can put markup in the report", () => {
     )
   );
 
+  // Widened from a letter-led match: a comment or an `<!…>` declaration was
+  // invisible to it, so an injection in that shape would not have been seen.
   function tagsIn(html: string) {
-    return [...html.matchAll(/<\/?([a-zA-Z][^\s>\/]*)/g)].map(m => m[1].toLowerCase());
+    return [...html.matchAll(/<\/?([^\s>\/]+)/g)].map(m => m[1].toLowerCase());
   }
 
   test("a scene, world or step name writes no tag of its own", () => {
@@ -290,6 +319,19 @@ describe("nothing a world contains can put markup in the report", () => {
       const html = buildReportHtml(results, { sceneName, worldTitle, tourLabel, baselineCount: 3 });
       for ( const tag of tagsIn(html) ) expect(OWN_TAGS).toContain(tag);
     }), { numRuns: 500 });
+  });
+
+  test("even a status value writes no tag, though only a constant ever reaches it", () => {
+    // Scoped to this one test rather than widened into the shared generator: every
+    // other property legitimately assumes a real status, and `summarise` counts by
+    // status, so a hostile value there would break claims that are true.
+    fc.assert(fc.property(hostile, status => {
+      const html = buildReportHtml([{
+        id: "x", week: 1, competency: "Canvas preparation", topic: "TOPIC(x)",
+        status, message: "MSG(x)", done: "DONE(x)", hint: "HINT(x)", tour: null
+      }] as any, { sceneName: "Scene" });
+      for ( const tag of tagsIn(html) ) expect(OWN_TAGS).toContain(tag);
+    }), { numRuns: 300 });
   });
 
   test("row text writes no tag of its own either", () => {
@@ -465,6 +507,44 @@ describe("the prerequisite graph is a path, not a loop", () => {
     const rows = ring(2);
     rows[0].needs = "nothing_named_this";
     expect(validateChecks(rows).join("\n")).toContain("not a row in this set");
+  });
+
+  test("duplicate ids cannot hide a loop that runs through them", () => {
+    // Edges were keyed by id with one value, so a second row sharing an id replaced
+    // the first row's edge. Validation reported only the duplicate id while the run
+    // stranded every row in the loop.
+    const rows: any[] = [
+      { ...ring(1)[0], id: "B", needs: "A" },
+      { ...ring(1)[0], id: "B", needs: "C" },
+      { ...ring(1)[0], id: "A", needs: "B" },
+      { ...ring(1)[0], id: "C", needs: null }
+    ];
+    const problems = validateChecks(rows).join("\n");
+    expect(problems).toContain("duplicate id");
+    expect(problems).toContain("prerequisite loop");
+  });
+
+  test("a row id containing the old signature separator cannot suppress a loop", () => {
+    const rows: any[] = [
+      { ...ring(1)[0], id: "A>B", needs: "A>B" },
+      { ...ring(1)[0], id: "A", needs: "B" },
+      { ...ring(1)[0], id: "B", needs: "A" }
+    ];
+    const problems = validateChecks(rows).join("\n");
+    expect(problems).toContain("names the row itself");
+    expect(problems).toContain("prerequisite loop");
+  });
+
+  test("an id that is not a string is refused rather than silently dropped", () => {
+    for ( const id of [0, false, 7, {}] ) {
+      const rows: any[] = [{ ...ring(1)[0], id, needs: null }];
+      expect(validateChecks(rows).join("\n")).toContain("must be a string");
+    }
+  });
+
+  test("a prerequisite that is not a row id is refused", () => {
+    const rows: any[] = [{ ...ring(1)[0], id: "A", needs: 3 }];
+    expect(validateChecks(rows).join("\n")).toContain("`needs` must be a row id");
   });
 
   test("a chain that ends is not a loop", () => {

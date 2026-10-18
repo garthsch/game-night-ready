@@ -64,7 +64,10 @@ const context = rec({
 /** Paths that hit something, paths that hit null, and paths that hit nothing at all. */
 const ANY_PATH = fc.constantFrom("lit", "size", "name", "zero", "unset", "missing", "nested.deep", "members");
 const NUMERIC_PATH = fc.constantFrom("size", "zero");
-const COLLECTION_PATH = fc.constantFrom("members", "missing", "size");
+// `name` is in here deliberately. It was absent, and that absence hid a real
+// fault: a string is iterable, so a collection operator on a text field counted
+// characters. Every collection property was blind to the case it most needed.
+const COLLECTION_PATH = fc.constantFrom("members", "missing", "size", "name");
 
 /** A where clause, read against a member rather than the context. */
 const where = fc.oneof(
@@ -144,11 +147,36 @@ describe("toMembers conserves membership", () => {
     // The distinction is the whole point: an empty collection is a finding, an
     // unreadable one is not, and reporting the second as the first invents a gap.
     fc.assert(fc.property(
-      fc.oneof(fc.integer(), fc.boolean(), fc.constant(null), fc.constant(undefined), fc.double({ noNaN: true })),
+      fc.oneof(fc.integer(), fc.boolean(), fc.constant(null), fc.constant(undefined),
+        fc.double({ noNaN: true }), fc.string()),
       value => {
         expect(toMembers(value)).toBe(UNAVAILABLE);
       }
     ), RUNS);
+  });
+});
+
+describe("a text field is not a collection", () => {
+  test("no string is readable as members, however long", () => {
+    // A string is iterable, so this returned one member per character until
+    // `toMembers` guarded it. The law above was written without strings in its
+    // generator, so it passed while being false.
+    fc.assert(fc.property(fc.string(), value => {
+      expect(toMembers(value)).toBe(UNAVAILABLE);
+    }), RUNS);
+  });
+
+  test("a collection operator on a text field reads as unavailable, not as a count", () => {
+    // The fabricated pass this prevents: `count_gte 1` on a scene named "Keep"
+    // reported four members and passed, and an empty name reported a gap.
+    fc.assert(fc.property(fc.string(), fc.integer({ min: 0, max: 4 }), (name, value) => {
+      const ctx = { name };
+      expect(evaluatePredicate({ op: "count_gte", path: "name", value }, ctx)).toBe(UNAVAILABLE);
+      expect(evaluatePredicate({ op: "every", path: "name", where: { op: "truthy", path: "x" } }, ctx))
+        .toBe(UNAVAILABLE);
+      expect(evaluatePredicate({ op: "some", path: "name", where: { op: "truthy", path: "x" }, min: 1 }, ctx))
+        .toBe(UNAVAILABLE);
+    }), RUNS);
   });
 });
 
@@ -354,6 +382,27 @@ describe("counting is monotone", () => {
         const unfiltered = { op: "some", path: "members", where: w, min };
         if ( evaluatePredicate(filtered, ctx, { baseline }) !== true ) return;
         expect(evaluatePredicate(unfiltered, ctx, {})).toBe(true);
+      }
+    ), RUNS);
+  });
+
+  test("excluding the baseline removes exactly the baseline members", () => {
+    // The two monotonicity properties above both survive a `filterBaseline` that
+    // keeps only the baseline members, because either way the result is a subset.
+    // This states the equality instead, which is the claim that mutant breaks.
+    fc.assert(fc.property(
+      fc.array(member, { maxLength: 8 }),
+      fc.array(fc.string({ minLength: 1, maxLength: 4 }), { maxLength: 6 }),
+      fc.integer({ min: 0, max: 9 }),
+      (members, baselineIds, value) => {
+        const baseline = new Set(baselineIds);
+        const expected = members.filter(m => !baseline.has(m.id)).length;
+        const verdict = evaluatePredicate(
+          { op: "count_gte", path: "members", value, excludeBaseline: true },
+          { members },
+          { baseline }
+        );
+        expect(verdict).toBe(expected >= value);
       }
     ), RUNS);
   });
