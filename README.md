@@ -2,6 +2,13 @@
 
 **A module for [Foundry Virtual Tabletop](https://foundryvtt.com) v14.**
 
+> **Alpha.** This is in active development and iterating quickly. Check names,
+> row content, hint wording and the report layout can all change between
+> releases, and a release may land on any day. Pin a version if you need
+> stability; otherwise expect the next one to be different. Release notes record
+> what moved, and anything they got wrong is corrected in a later note rather
+> than edited away.
+
 Press one button before a session and see what is still outstanding in the
 Foundry world you are about to run.
 
