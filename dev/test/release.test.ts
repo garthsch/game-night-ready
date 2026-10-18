@@ -175,3 +175,129 @@ describe("the module as it stands today ships complete", () => {
     expect(paths).toContain("scripts/tours.mjs");
   });
 });
+
+describe("the forms the first version of this gate could not see", () => {
+  // Every case here passed all six original gates. They are grouped because they
+  // share one cause: the gate derived from two import spellings and checked only
+  // that files were present.
+
+  test("a bare side-effect import is an import", () => {
+    // `import "./x.mjs";` matched neither original regex, so the file was neither
+    // derived into the ship list nor checked. The old negative control used the
+    // `from` spelling, so it proved the half that already worked.
+    const files = soundArchive();
+    files["scripts/module.mjs"] = encode(`import "./polyfill.mjs";\n`);
+    expect(faultsOf(files, "G2")[0]).toContain("polyfill.mjs");
+  });
+
+  test("a shipped script that does not parse is caught", () => {
+    const files = soundArchive();
+    files["scripts/module.mjs"] = encode(`export function run( {\n`);
+    expect(faultsOf(files, "G8")[0]).toContain("not valid JavaScript");
+  });
+
+  test("a shipped JSON file that does not parse is caught", () => {
+    const files = soundArchive();
+    files["data/checks.json"] = encode(`[ {"id": "a",, ]\n`);
+    expect(faultsOf(files, "G8")[0]).toContain("not valid JSON");
+  });
+
+  test("rows the module fetches at runtime are run through its own validator", () => {
+    // The sibling commit taught `validateChecks` to refuse a prerequisite loop.
+    // Without this gate that was true of a test and not of a release, because the
+    // rows are data and shipped unexamined.
+    const files = soundArchive();
+    files["data/checks.json"] = encode(JSON.stringify([
+      { id: "a", week: 1, competency: "c", topic: "t", scope: "scene", predicate: { op: "truthy", path: "x" }, message: "m", done: "d", hint: "h", needs: "b" },
+      { id: "b", week: 1, competency: "c", topic: "t", scope: "scene", predicate: { op: "truthy", path: "x" }, message: "m", done: "d", hint: "h", needs: "a" }
+    ]));
+    expect(faultsOf(files, "G9")[0]).toContain("prerequisite loop");
+  });
+
+  test("a file a stylesheet references is checked", () => {
+    const files = soundArchive();
+    files["styles/game-night-ready.css"] = encode(
+      `@font-face{src:url(fonts/rune.woff2)}\n.gnr{background:url("img/logo.png")}\n`);
+    const faults = faultsOf(files, "G7");
+    expect(faults).toHaveLength(2);
+    expect(faults.join(" ")).toContain("rune.woff2");
+  });
+
+  test("a remote or inline stylesheet reference is not ours to ship", () => {
+    const files = soundArchive();
+    files["styles/game-night-ready.css"] = encode(
+      `@font-face{src:url(https://fonts.example/x.woff2)}\n.gnr{background:url(data:image/gif;base64,AA)}\n`);
+    expect(faultsOf(files, "G7")).toEqual([]);
+  });
+
+  test("the two manifest keys that also carry paths are checked", () => {
+    const files = soundArchive();
+    files["module.json"] = encode(JSON.stringify({
+      id: manifest.id,
+      version: manifest.version,
+      compatibility: { minimum: "14", verified: "14.365" },
+      esmodules: ["scripts/module.mjs"],
+      scripts: ["scripts/legacy.js"],
+      packs: [{ name: "gear", path: "packs/gear", type: "Item" }]
+    }));
+    const faults = faultsOf(files, "G1").join(" ");
+    expect(faults).toContain("scripts/legacy.js");
+    expect(faults).toContain("packs/gear");
+  });
+});
+
+describe("a route the gate cannot resolve is said out loud", () => {
+  // Silence was the old behaviour, and in one shape it was worse than silence: a
+  // route built from a template prefix produced a fault naming a directory as
+  // though it were the missing file.
+
+  test("a concatenated route is reported as uncheckable", () => {
+    const files = soundArchive();
+    files["scripts/module.mjs"] = encode(`const u = getRoute("modules/" + MODULE_ID + "/data/checks.json");\n`);
+    expect(faultsOf(files, "G3").join(" ")).toContain("cannot be checked from here");
+  });
+
+  test("an interpolated tail is reported as uncheckable", () => {
+    const files = soundArchive();
+    files["scripts/module.mjs"] = encode(
+      "const u = getRoute(`modules/${MODULE_ID}/${dir}/checks.json`);\n");
+    expect(faultsOf(files, "G3").join(" ")).toContain("cannot be checked from here");
+  });
+
+  test("a directory prefix is never reported as a missing file", () => {
+    const files = soundArchive();
+    files["scripts/module.mjs"] = encode(
+      "const P = `modules/${MODULE_ID}/templates/`;\nrenderTemplate(P + \"report.hbs\");\n");
+    const faults = faultsOf(files, "G3").join(" ");
+    expect(faults).toContain("cannot be checked from here");
+    expect(faults).not.toContain('fetches "templates/"');
+  });
+
+  test("a fully literal route still resolves", () => {
+    const files = soundArchive();
+    expect(faultsOf(files, "G3")).toEqual([]);
+  });
+});
+
+describe("the leak tripwire covers the shapes that would plausibly occur", () => {
+  const SHAPES = [
+    "built on /home/someone",
+    "~/Projects/game-night-ready",
+    "\\\\wsl$\\Ubuntu\\home\\someone\\x",
+    "/root/secrets",
+    "someone@example.com",
+    "/Users/Garth2/x",
+    "C:\\Users\\someone\\x",
+    "$HOME/.config"
+  ];
+  test.each(SHAPES)("caught: %s", shape => {
+    const files = soundArchive();
+    files["README.md"] = encode(`# Game Night Ready\n${shape}\n`);
+    expect(faultsOf(files, "G6").length).toBeGreaterThan(0);
+  });
+
+  test("the module as it stands trips none of them", () => {
+    const { paths } = shipList(manifest);
+    expect(faultsOf(buildArchive(paths), "G6")).toEqual([]);
+  });
+});

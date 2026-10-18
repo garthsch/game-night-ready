@@ -31,6 +31,7 @@
  */
 
 import { zipSync, unzipSync } from "fflate";
+import { validateChecks } from "../scripts/evaluator.mjs";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { dirname, join, normalize, relative } from "node:path";
 
@@ -60,11 +61,21 @@ function text(bytes: Uint8Array): string {
   return new TextDecoder().decode(bytes);
 }
 
+/** A parser's first line, since the rest is a position dump nobody reads here. */
+function firstLine(message: string): string {
+  return String(message).split("\n")[0].trim();
+}
+
 /** Paths `module.json` declares. The manifest is the contract Foundry reads. */
 function declaredPaths(manifest: any): string[] {
   const paths: string[] = [];
-  for ( const key of ["esmodules", "styles"] ) {
+  // `scripts` is the pre-ESM form and Foundry still loads it; `packs` holds
+  // compendium databases. Both resolve at install time and neither was checked.
+  for ( const key of ["esmodules", "styles", "scripts"] ) {
     for ( const entry of manifest[key] ?? [] ) paths.push(entry);
+  }
+  for ( const pack of manifest.packs ?? [] ) {
+    if ( pack?.path ) paths.push(pack.path);
   }
   for ( const language of manifest.languages ?? [] ) {
     if ( language?.path ) paths.push(language.path);
@@ -80,14 +91,34 @@ function declaredPaths(manifest: any): string[] {
 /**
  * Every relative import in a source file, as written.
  *
- * Static `from "./x.mjs"` and dynamic `import("./x.mjs")` both count: either one
- * fails the module at load time when its target is missing from the archive.
+ * Three forms, because all three fail the module at load time when the target is
+ * missing: `from "./x.mjs"`, `import("./x.mjs")`, and the bare side-effect
+ * `import "./x.mjs"`. The third was missed by the first version of this file, and
+ * the test that was supposed to prove the check used the `from` spelling, so it
+ * proved the half that already worked. A bare import is ordinary ES syntax, so
+ * that hole was the exact fault class this tool exists to prevent.
  */
 function relativeImports(source: string): string[] {
   const found = new Set<string>();
   for ( const match of source.matchAll(/\bfrom\s+["'](\.[^"']+)["']/g) ) found.add(match[1]);
   for ( const match of source.matchAll(/\bimport\s*\(\s*["'](\.[^"']+)["']\s*\)/g) ) found.add(match[1]);
+  for ( const match of source.matchAll(/\bimport\s+["'](\.[^"']+)["']/g) ) found.add(match[1]);
   return [...found];
+}
+
+/**
+ * Every file a stylesheet points at: `url(...)` targets and `@import`s.
+ *
+ * A stylesheet is shipped because the manifest names it, and then its own
+ * references are nobody's job. A missing web font or background image is not a
+ * load failure, so nothing else would ever catch it.
+ */
+function cssReferences(source: string): string[] {
+  const found = new Set<string>();
+  for ( const match of source.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g) ) found.add(match[1].trim());
+  for ( const match of source.matchAll(/@import\s+["']([^"']+)["']/g) ) found.add(match[1]);
+  // A remote font or a data URI is not ours to ship.
+  return [...found].filter(ref => !/^(https?:|data:|\/\/)/.test(ref));
 }
 
 /**
@@ -97,16 +128,23 @@ function relativeImports(source: string): string[] {
  * case: a file the module cannot run without and the manifest never names. Matched
  * on the literal tail so an interpolated module id still resolves.
  */
-function runtimeRoutes(source: string, moduleId: string): string[] {
-  const found = new Set<string>();
-  const patterns = [
-    new RegExp(`modules/${moduleId}/([A-Za-z0-9_./-]+)`, "g"),
-    /modules\/\$\{[A-Za-z_][A-Za-z0-9_]*\}\/([A-Za-z0-9_./-]+)/g
-  ];
-  for ( const pattern of patterns ) {
-    for ( const match of source.matchAll(pattern) ) found.add(match[1]);
+function runtimeRoutes(source: string, moduleId: string): { resolved: string[]; unresolvable: string[] } {
+  const resolved = new Set<string>();
+  const unresolvable = new Set<string>();
+  const literal = new RegExp(
+    `modules/(?:\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}|${moduleId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})/([^"'\`\\s)]*)`,
+    "g"
+  );
+  for ( const match of source.matchAll(literal) ) {
+    const tail = match[1];
+    // An interpolated or truncated tail cannot be resolved here. Reporting the
+    // part that did match would name a directory as if it were the missing file,
+    // which is a true-sounding fault about the wrong path.
+    if ( !tail || tail.includes("${") || tail.endsWith("/") ) unresolvable.add(match[0]);
+    else resolved.add(tail);
   }
-  return [...found];
+  if ( /["'\`]modules\/["'\`]\s*\+/.test(source) ) unresolvable.add('a route concatenated from "modules/"');
+  return { resolved: [...resolved], unresolvable: [...unresolvable] };
 }
 
 /** Resolve an import as written against the importing file's own directory. */
@@ -135,14 +173,22 @@ export function shipList(manifest: any): { paths: string[]; missing: string[] } 
       missing.push(path);
       continue;
     }
-    if ( !/\.(mjs|js)$/.test(path) ) continue;
-    const source = text(read(path));
+    const source = /\.(mjs|js|css)$/.test(path) ? text(read(path)) : null;
+    if ( source === null ) continue;
+    if ( /\.css$/.test(path) ) {
+      for ( const reference of cssReferences(source) ) {
+        const target = resolveFrom(path, reference);
+        wanted.add(target);
+        queue.push(target);
+      }
+      continue;
+    }
     for ( const specifier of relativeImports(source) ) {
       const target = resolveFrom(path, specifier);
       wanted.add(target);
       queue.push(target);
     }
-    for ( const route of runtimeRoutes(source, manifest.id) ) {
+    for ( const route of runtimeRoutes(source, manifest.id).resolved ) {
       wanted.add(route);
       queue.push(route);
     }
@@ -178,10 +224,18 @@ export function gate(files: Archive, manifest: any, strictVersion = true): Gate[
   const sources = Object.keys(files).filter(path => /\.(mjs|js)$/.test(path));
   const gates: Gate[] = [];
 
+  // Declarations are read from the archive's own manifest, not from the build's.
+  // Foundry resolves what the installed manifest names, so self-consistency is the
+  // question here; whether that manifest agrees with this build is G4's job.
+  let own: any = manifest;
+  try { if ( has("module.json") ) own = JSON.parse(text(files["module.json"])); }
+  catch { own = manifest; }
+  const moduleId = (typeof own?.id === "string") ? own.id : manifest.id;
+
   gates.push({
     id: "G1",
-    claim: "every path module.json declares is in the archive",
-    faults: declaredPaths(manifest).filter(path => !has(path)).map(path => `declared but absent: ${path}`)
+    claim: "every path the archive's manifest declares is in the archive",
+    faults: declaredPaths(own).filter(path => !has(path)).map(path => `declared but absent: ${path}`)
   });
 
   const importFaults: string[] = [];
@@ -195,11 +249,25 @@ export function gate(files: Archive, manifest: any, strictVersion = true): Gate[
 
   const routeFaults: string[] = [];
   for ( const path of sources ) {
-    for ( const route of runtimeRoutes(text(files[path]), manifest.id) ) {
+    const { resolved, unresolvable } = runtimeRoutes(text(files[path]), moduleId);
+    for ( const route of resolved ) {
       if ( !has(route) ) routeFaults.push(`${path} fetches "${route}" at runtime, which is not in the archive`);
+    }
+    for ( const route of unresolvable ) {
+      routeFaults.push(`${path} builds the route \`${route}\` at runtime, which cannot be checked from here:`
+        + " write it as one literal string so the archive can be checked against it");
     }
   }
   gates.push({ id: "G3", claim: "every runtime module route resolves inside the archive", faults: routeFaults });
+
+  const styleFaults: string[] = [];
+  for ( const path of Object.keys(files).filter(p => /\.css$/.test(p)) ) {
+    for ( const reference of cssReferences(text(files[path])) ) {
+      const target = resolveFrom(path, reference);
+      if ( !has(target) ) styleFaults.push(`${path} references "${reference}", which is not in the archive`);
+    }
+  }
+  gates.push({ id: "G7", claim: "every file a stylesheet references is in the archive", faults: styleFaults });
 
   // Version agreement is a claim about a build, not about an archive. Gating an
   // already-published archive compares it with whatever the tree says today, which
@@ -226,6 +294,38 @@ export function gate(files: Archive, manifest: any, strictVersion = true): Gate[
     faults: versionFaults
   });
 
+  // Presence was the only thing the first version checked, so an archive whose
+  // every declared file was present and whose code did not parse passed cleanly.
+  // That is the user-visible failure the tool exists to prevent, arriving by a
+  // different door.
+  const parseFaults: string[] = [];
+  const transpiler = new Bun.Transpiler({ loader: "js" });
+  for ( const path of sources ) {
+    try { transpiler.transformSync(text(files[path])); }
+    catch ( err: any ) { parseFaults.push(`${path} is not valid JavaScript: ${firstLine(err.message)}`); }
+  }
+  const parsed: Record<string, unknown> = {};
+  for ( const path of Object.keys(files).filter(name => /\.json$/.test(name)) ) {
+    try { parsed[path] = JSON.parse(text(files[path])); }
+    catch ( err: any ) { parseFaults.push(`${path} is not valid JSON: ${firstLine(err.message)}`); }
+  }
+  gates.push({ id: "G8", claim: "every shipped script parses and every shipped JSON file parses", faults: parseFaults });
+
+  // The rows are the module's whole behaviour, and they are data, so a release can
+  // ship rows the module rejects at startup. The validator next door refuses a
+  // prerequisite loop; running it here is what makes that true of a release rather
+  // than only of a test.
+  const rowFaults: string[] = [];
+  const routed = new Set<string>();
+  for ( const path of sources ) {
+    for ( const route of runtimeRoutes(text(files[path]), moduleId).resolved ) routed.add(route);
+  }
+  for ( const [path, value] of Object.entries(parsed) ) {
+    if ( !routed.has(path) || !Array.isArray(value) ) continue;
+    for ( const problem of validateChecks(value) ) rowFaults.push(`${path}: ${problem}`);
+  }
+  gates.push({ id: "G9", claim: "the rows the module fetches at runtime pass its own validator", faults: rowFaults });
+
   gates.push({
     id: "G5",
     claim: "no dev material is in the archive",
@@ -235,14 +335,29 @@ export function gate(files: Archive, manifest: any, strictVersion = true): Gate[
 
   // The repository is public and the archive is the thing strangers download, so
   // this is the last place a local path or a home directory can be caught.
+  // Widened after a second look found six of seven plausible shapes slipping
+  // through: the trailing slash was required, so `/home/<user>` with nothing after
+  // it passed, as did a tilde path, a WSL UNC path and an email address. The
+  // realistic leak here is a README line or a code comment, which is the set that
+  // was missing. This is a tripwire for known spellings, not a proof of absence.
   const leakFaults: string[] = [];
+  const LEAKS: [RegExp, string][] = [
+    [/\/home\/[A-Za-z0-9._-]+/, "a /home path"],
+    [/\/Users\/[A-Za-z0-9._-]+/, "a /Users path"],
+    [/\/root\b/, "a /root path"],
+    [/[A-Za-z]:\\Users\\/, "a Windows user path"],
+    [/\\\\wsl\$?\\/i, "a WSL UNC path"],
+    [/(^|[\s"'(=])~\//m, "a tilde home path"],
+    [/\$HOME\b/, "a $HOME reference"],
+    [/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/, "an email address"]
+  ];
   for ( const [path, bytes] of Object.entries(files) ) {
     const content = text(bytes);
-    for ( const pattern of [/\/home\/[a-z]+\//i, /C:\\Users\\/i, /\/Users\/[a-z]+\//i] ) {
-      if ( pattern.test(content) ) leakFaults.push(`${path} contains a local filesystem path`);
+    for ( const [pattern, what] of LEAKS ) {
+      if ( pattern.test(content) ) leakFaults.push(`${path} contains ${what}`);
     }
   }
-  gates.push({ id: "G6", claim: "no local path reaches the archive", faults: [...new Set(leakFaults)] });
+  gates.push({ id: "G6", claim: "no local path or address reaches the archive", faults: [...new Set(leakFaults)] });
 
   return gates;
 }
